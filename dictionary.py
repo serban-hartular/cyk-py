@@ -2,6 +2,8 @@ from collections import defaultdict
 
 
 import pyconll
+
+from rule import NodeData
 from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
 from typing import List
 
@@ -38,7 +40,7 @@ infile.close()
 def word_dict_2_tree(word_rec : dict) -> cyk_parser.Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
     count = word_rec['count']
-    tree = cyk_parser.Tree(node_data)
+    tree = cyk_parser.Tree(NodeData(node_data))
     tree.score = count
     return tree
 
@@ -52,4 +54,6 @@ def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.Pars
     return cyk_parser.ParseSquare(tree_list)
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) -> List[cyk_parser.ParseSquare]:
-    pass
+    words = text.split()
+    return [word_2_parse_square(w) for w in words]
+

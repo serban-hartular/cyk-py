@@ -37,7 +37,7 @@ class Tree:
         return set(leaves1) == set(leaves2) and set(rules1) == set(rules2)
     def __str__(self):
         text = '"' + self.form + '"'
-        text += self.data[TYPE_STR][0] if TYPE_STR in self.data.keys() else ''
+        text += self.data[TYPE_STR].get() if TYPE_STR in self.data.keys() else ''
         other_keys = [k for k in self.data.keys() if k not in [FORM_STR, TYPE_STR]]
         if other_keys:
             text += '['
@@ -102,7 +102,7 @@ class Parser:
             for node1, node2 in [(n1, n2) for n1 in child_sq1 for n2 in child_sq2]: #zip(child_sq1, child_sq2):
                 # if (row_index, col_index) == (2, 0):
                 #     print(node1.data, node2.data)
-                for rule in grammar.doubletons:
+                for rule in self.grammar.doubletons:
                     result = rule.apply([node1.data, node2.data])
                     if not result: continue
                     new_node = Tree(result, rule, [node1, node2])
@@ -110,28 +110,30 @@ class Parser:
                     if not prune_similar or (prune_similar and not similar):
                         square.append(new_node)
 
-from rule_io import rule_list_from_string
-
-grammar_rules = """
-NP[caz=@] ::= N[caz=@]
-AdjP ::= Adj
-NP[caz=@] ::= NP[caz=@] AdjP
-NP[caz=@] ::= DetP NP[caz=@]
-DetP ::= Det
-"""
-# NP ::= AdjP
-
-grammar = Grammar(rule_list_from_string(grammar_rules))
-
-parser = Parser(grammar)
-input = [
-    NodeData({'form':['un'],     'type':['Det']}),
-    NodeData({'form':['baiat'], 'type':['N'], 'gen':['masc', 'fem']}),
-    NodeData({'form':['frumos'], 'type':['Adj']}),
-]
-
-input_squares = [ParseSquare.from_data_list([d]) for d in input]
-
-table = parser.parse(input_squares)
-
-
+# from rule_io import rule_list_from_string
+# 
+# grammar_rules = """
+# NP[caz=@ gen=@] ::= N[caz=@ gen=@]
+# AdjP ::= Adj
+# NP[caz=@ gen=@] ::= NP[caz=@ gen=@] AdjP
+# NP[caz=@ gen=@] ::= DetP NP[caz=@ gen=@]
+# DetP ::= Det
+# """
+# # NP ::= AdjP
+# 
+# from values import Values
+# 
+# grammar = Grammar(rule_list_from_string(grammar_rules))
+# 
+# parser = Parser(grammar)
+# input = [
+#     NodeData({'form':Values(['un']),     'type':Values(['Det'])}),
+#     NodeData({'form':Values(['baiat']), 'type':Values(['N']), 'gen':['masc', 'fem']}),
+#     NodeData({'form':['frumos'], 'type':['Adj']}),
+# ]
+# 
+# input_squares = [ParseSquare.from_data_list([d]) for d in input]
+# 
+# table = parser.parse(input_squares)
+# 
+# 
