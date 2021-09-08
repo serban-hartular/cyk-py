@@ -110,30 +110,29 @@ class Parser:
                     if not prune_similar or (prune_similar and not similar):
                         square.append(new_node)
 
-# from rule_io import rule_list_from_string
-# 
-# grammar_rules = """
-# NP[caz=@ gen=@] ::= N[caz=@ gen=@]
-# AdjP ::= Adj
-# NP[caz=@ gen=@] ::= NP[caz=@ gen=@] AdjP
-# NP[caz=@ gen=@] ::= DetP NP[caz=@ gen=@]
-# DetP ::= Det
-# """
-# # NP ::= AdjP
-# 
-# from values import Values
-# 
-# grammar = Grammar(rule_list_from_string(grammar_rules))
-# 
-# parser = Parser(grammar)
-# input = [
-#     NodeData({'form':Values(['un']),     'type':Values(['Det'])}),
-#     NodeData({'form':Values(['baiat']), 'type':Values(['N']), 'gen':['masc', 'fem']}),
-#     NodeData({'form':['frumos'], 'type':['Adj']}),
-# ]
-# 
-# input_squares = [ParseSquare.from_data_list([d]) for d in input]
-# 
-# table = parser.parse(input_squares)
-# 
-# 
+    
+    # NP ::= AdjP
+if __name__ == '__main__':    
+    from values import Values
+    from rule_io import rule_list_from_string
+
+    grammar_rules = """
+    NP[caz=@ gen=@] ::= N[caz=@ gen=@]
+    AdjP ::= Adj
+    NP[caz=@ gen=@] ::= NP[caz=@ gen=@] AdjP
+    NP[caz=@ gen=@] ::= DetP NP[caz=@ gen=@]
+    DetP ::= Det
+    """
+
+    grammar = Grammar(rule_list_from_string(grammar_rules))
+    
+    parser = Parser(grammar)
+    input = [
+        NodeData({'form':Values(['un']),     'type':Values(['Det'])}),
+        NodeData({'form':Values(['baiat']), 'type':Values(['N']), 'gen':['masc', 'fem']}),
+        NodeData({'form':['frumos'], 'type':['Adj']}),
+    ]    
+    input_squares = [ParseSquare.from_data_list([d]) for d in input]
+    table = parser.parse(input_squares)
+    
+    

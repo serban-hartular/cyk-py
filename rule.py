@@ -24,33 +24,48 @@ def isVar(val : Values):
     return None
 
 class Constraint:
-    def __init__(self, values : Values, isStrict : bool = False, isNegated : bool = False) -> None:
+    def __init__(self, key: str, values : Values, isStrict : bool = False, isNegated : bool = False) -> None:
         if not values:
             raise Exception("Constraint must contain values")
+        self.key = key
         self.values = Values(values)
         self.isStrict = isStrict
         self.isNegated = isNegated
         if isVar(self.values) and self.isNegated:
-            raise Exception("Negated equality to variable not allowed")
+            raise Exception("Negated equality to unkown variable not allowed")
+    def matches(self, data : NodeData, var_dict : dict = None) -> bool:
+        if isVar(self.values) and var_dict is None:
+            raise Exception('Asked to evaluate variable and no var_dict provided in %s' % str(self))
+        data_values = data.get(self.key)
+        if not data_values:
+            data_values = Values() if self.isStrict else Values.all()
+        self_values = var_dict[self.key] if isVar(self.values) else self.values
+        intersection = self_values.intersection(data_values)
+        if not intersection:
+            return self.isNegated # true if result is empty, false if it isn't
+        if isVar(self.values):
+            var_dict[isVar(self.values)] = intersection
+            # print(self_values, data_values, intersection)
+        return not self.isNegated 
     def _matches(self, values : Values) -> Values:
         if not values:
             values = Values() if self.isStrict else Values.all()
         return self.values.intersection(values)
-    def matches(self, values : Values) -> Values:
+    def __matches(self, values : Values) -> Values:
         m = self._matches(values)
         if not self.isNegated: return m
         if m: return Values()
         else: return Values.all()
     def to_text(self):
-        return ('!=' if self.isNegated else ('==' if self.isStrict else '=')) + ','.join([v for v in self.values])
+        return self.key+('!=' if self.isNegated else ('==' if self.isStrict else '=')) + ','.join([v for v in self.values])
     def __str__(self):
         return self.to_text()
     def __repr__(self):
         return str(self)
 
 class RuleItem(Dict[str, Constraint]):
-    def __init__(self, d : Dict[str, Constraint]):
-        super().__init__(d)
+    def __init__(self, l : List[Constraint]):
+        super().__init__({c.key : c for c in l})
         for key, constraint in self.items():
             var = isVar(constraint.values)
             if var and var[0] == VAR_PREFIX:
@@ -58,14 +73,18 @@ class RuleItem(Dict[str, Constraint]):
     def matches(self, item : NodeData, variable_dict : dict, keys_to_skip = list()):
         for key, constraint in self.items():
             if key in keys_to_skip: continue
-            item_val = item.get(key)
-            if not item_val: item_val = Values() if constraint.isStrict else Values.all()
-            if isVar(constraint.values): 
-                var_value = variable_dict[isVar(constraint.values)].intersection(item_val)
-                variable_dict[isVar(constraint.values)] = var_value
-                if not var_value: return False
-            elif not constraint.matches(item_val):
+            # print(constraint)
+            if not constraint.matches(item, variable_dict):
+                # print(str(item) + ' failed ' + str(constraint))
                 return False
+            # item_val = item.get(key)
+            # if not item_val: item_val = Values() if constraint.isStrict else Values.all()
+            # if isVar(constraint.values): 
+            #     var_value = variable_dict[isVar(constraint.values)].intersection(item_val)
+            #     variable_dict[isVar(constraint.values)] = var_value
+            #     if not var_value: return False
+            # elif not constraint.matches(item_val):
+            #     return False
         return True
     def to_node(self):
         return NodeData({k:v.values for k, v in self.items()})
@@ -74,7 +93,7 @@ class RuleItem(Dict[str, Constraint]):
         keys_less_type = [k for k in self.keys() if k != TYPE_STR]
         if not keys_less_type: return text
         text += '['
-        text += ' '.join([k + self[k].to_text() for k in keys_less_type])
+        text += ' '.join([self[k].to_text() for k in keys_less_type])
         text += ']'
         return text
     def __str__(self):
@@ -102,6 +121,7 @@ class Rule:
             var = isVar(value)
             if not var: continue
             actual_val = variable_dict.get(var)
+            # print(var, actual_val)
             if not actual_val: return None
             if actual_val.isAll():
                 keys_to_pop.append(key) # if isAll() -- no new info, pop
