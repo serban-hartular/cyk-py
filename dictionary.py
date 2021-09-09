@@ -55,5 +55,11 @@ def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.Pars
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) -> List[cyk_parser.ParseSquare]:
     words = text.split()
-    return [word_2_parse_square(w) for w in words]
+    sq_list = []
+    for word in words:
+        sq = word_2_parse_square(word)
+        if not sq:
+            raise Exception('Unkown word ' + word)
+        sq_list.append(sq)
+    return sq_list
 

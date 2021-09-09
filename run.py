@@ -1,6 +1,6 @@
 from dictionary import text_2_square_list
 from cyk_parser import Parser, Grammar
-from rule_io import rule_list_from_string
+from cyk_grammar_loader import load_grammar
 
 grammar_rules = """
 NP[Case=@ Gender=@ Number=@] ::= NOUN[Case=@ Gender=@ Number=@]
@@ -12,8 +12,16 @@ VP[Number=@ Person=@] ::= NP[Number=@ Person=@] VERB[Number=@ Person=@]
 
 """
 
-grammar = Grammar(rule_list_from_string(grammar_rules))
+def parse(text : str, parser : Parser):
+    try:
+        sq_list = text_2_square_list(text)
+    except Exception as e:
+        print(e)
+        return 
+    parser.parse(sq_list)
+
+grammar = load_grammar(grammar_rules)
 parser = Parser(grammar)
-sq_list = text_2_square_list('Un băiat mergea')
-table = parser.parse(sq_list)
+parse('Un băiat mergea', parser)
+
 
