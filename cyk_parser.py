@@ -49,11 +49,17 @@ class Tree:
         return text
     def __repr__(self):
         return str(self)
-    def detail(self) -> str:
-        text = str(self) + '\n'
-        text += str(self.rule) + '\n'
+    def detail(self, recurse = False, depth = 0) -> str:
+        text = '\t' * depth + str(self) + '\n'
+        if not recurse:
+            text += '\t' * depth + str(self.rule) + '\n'
         for child in self.children:
-            text += '\t' + str(child) + '\n'
+            if not recurse:
+                text += '\t' * (depth+1) + str(child) + '\n'
+            elif len(child.children) == 1 and not child.children[0].children:
+                text += '\t' * (depth+1) + str(child) + ' <- ' + str(child.children[0]) + '\n'
+            else:
+                text += child.detail(recurse, depth+1)
         return text
 
 class ParseSquare(List[Tree]):
@@ -138,7 +144,7 @@ if __name__ == '__main__':
     NP[GNC=@] ::= DetP[GNC=@] NP[GNC=@]
     DetP[GNC=@] ::= Det[GNC=@]
     PP ::= ADP[caz=@] NP[caz=@]
-    VP ::= VERB
+    VP ::= NP[caz!=Dat] VERB
     VP ::= VP PP
     NP[GNC=@] ::= NP[GNC=@] PP
     """
@@ -147,6 +153,7 @@ if __name__ == '__main__':
     
     parser = Parser(grammar)
     input = [
+        NodeData({'form': 'Ion', 'type': 'N'}),
         NodeData({'form':'merge', 'type':'VERB'}),
         NodeData({'form': 'cu', 'type': 'ADP'}),
         NodeData({'form': 'spada', 'type': 'N'}),

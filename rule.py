@@ -33,7 +33,7 @@ class Constraint:
         self.isNegated = isNegated
         var = isVar(self.values)
         if var and self.isNegated:
-            raise Exception("Negated equality to unkown variable not allowed")
+            raise Exception("Negated equality to unknown variable not allowed")
         if var and var == VAR_PREFIX:
             self.values = Values(VAR_PREFIX + key)
     def matches(self, data : NodeData, var_dict : dict = None) -> bool:
