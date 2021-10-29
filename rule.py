@@ -6,58 +6,49 @@ TYPE_STR = 'type'
 VAR_PREFIX = '@'
 
 
-# Values = List[str]
-from values import Values
+# RValues = List[str]
+from rvalues import RValues
 
-class NodeData(Dict[str, Values]):
+class NodeData(Dict[str, RValues]):
     def __init__(self, d : dict):
         super().__init__()
         for k,v in d.items():
-            self[k] = Values(v)
+            self[k] = RValues(v)
     def __setitem__(self, key, value):
-        super().__setitem__(key, Values(value))
+        super().__setitem__(key, RValues(value))
 
-def isVar(val : Values):
-    if not val or len(val) != 1: return None
-    val = list(val)
-    if val[0].startswith(VAR_PREFIX): return val[0]
-    return None
+# def isVar(val : RValues):
+#     if not val or len(val) != 1: return None
+#     val = list(val)
+#     if val[0].startswith(VAR_PREFIX): return val[0]
+#     return None
 
 class Constraint:
-    def __init__(self, key: str, values : Values, isStrict : bool = False, isNegated : bool = False) -> None:
+    def __init__(self, key: str, values : RValues, isStrict : bool = False, isNegated : bool = False) -> None:
         if not values:
             raise Exception("Constraint must contain values")
         self.key = key
-        self.values = Values(values)
+        self.values = RValues(values)
         self.isStrict = isStrict
         self.isNegated = isNegated
-        var = isVar(self.values)
-        if var and self.isNegated:
+        self.isVariable = self.values.isVariable
+        if self.isVariable and self.isNegated:
             raise Exception("Negated equality to unknown variable not allowed")
-        if var and var == VAR_PREFIX:
-            self.values = Values(VAR_PREFIX + key)
+        # if self.isVariable and var == VAR_PREFIX:
+        #     self.values = RValues(VAR_PREFIX + key)
     def matches(self, data : NodeData, var_dict : dict = None) -> bool:
-        if isVar(self.values) and var_dict is None:
+        if self.isVariable and var_dict is None:
             raise Exception('Asked to evaluate variable and no var_dict provided in %s' % str(self))
         data_values = data.get(self.key)
         if not data_values:
-            data_values = Values() if self.isStrict else Values.all()
-        self_values = var_dict[self.key] if isVar(self.values) else self.values
+            data_values = RValues() if self.isStrict else RValues.all()
+        self_values = var_dict[self.key] if self.isVariable else self.values
         intersection = self_values.intersection(data_values)
         if not intersection:
             return self.isNegated # true if result is empty, false if it isn't
-        if isVar(self.values):
+        if self.isVariable:
             var_dict[self.key] = intersection
         return not self.isNegated 
-    # def _matches(self, values : Values) -> Values:
-    #     if not values:
-    #         values = Values() if self.isStrict else Values.all()
-    #     return self.values.intersection(values)
-    # def __matches(self, values : Values) -> Values:
-    #     m = self._matches(values)
-    #     if not self.isNegated: return m
-    #     if m: return Values()
-    #     else: return Values.all()
     def to_text(self):
         return self.key+('!=' if self.isNegated else ('==' if self.isStrict else '=')) + ','.join([v for v in self.values])
     def __str__(self):
@@ -68,24 +59,11 @@ class Constraint:
 class RuleItem(Dict[str, Constraint]):
     def __init__(self, l : List[Constraint]):
         super().__init__({c.key : c for c in l})
-        # for key, constraint in self.items():
-        #     var = isVar(constraint.values)
-        #     if var and var[0] == VAR_PREFIX:
-        #         constraint.values = Values(var + key) # num=@ will become num=@num
     def matches(self, item : NodeData, variable_dict : dict, keys_to_skip = list()):
         for key, constraint in self.items():
             if key in keys_to_skip: continue
             if not constraint.matches(item, variable_dict):
-                # print(str(item) + ' failed ' + str(constraint))
                 return False
-            # item_val = item.get(key)
-            # if not item_val: item_val = Values() if constraint.isStrict else Values.all()
-            # if isVar(constraint.values): 
-            #     var_value = variable_dict[isVar(constraint.values)].intersection(item_val)
-            #     variable_dict[isVar(constraint.values)] = var_value
-            #     if not var_value: return False
-            # elif not constraint.matches(item_val):
-            #     return False
         return True
     def to_node(self):
         return NodeData({k:v.values for k, v in self.items()})
@@ -112,7 +90,7 @@ class Rule:
         if len(candidates) != len(self.children):
             return None
         # try constraints on candidates
-        variable_dict = defaultdict(lambda : Values.all())
+        variable_dict = defaultdict(lambda : RValues.all())
         for i in range(0, len(candidates)):
             if not self.children[i].matches(candidates[i], variable_dict):
                 return None
@@ -120,8 +98,8 @@ class Rule:
         # look for variables
         keys_to_pop = []
         for key, value in parent_node.items():
-            var = isVar(value)
-            if not var: continue
+            # var = isVar(value)
+            if not value.isVariable: continue
             actual_val = variable_dict.get(key)
             if not actual_val: return None
             if actual_val.isAll():
@@ -136,15 +114,3 @@ class Rule:
         return self.to_text()
     def __repr__(self):
         return str(self)
-
-        
-# NP = RuleItem({'type':Constraint(['NP']), 'nr':Constraint(['@1']), 'def':Constraint(['Def'])})
-# N = RuleItem({'type':Constraint(['N']), 'nr':Constraint(['@1'])})
-# Det = RuleItem({'type':Constraint(['Det']), 'nr':Constraint(['@1']), 'def':Constraint(['Def', 'Undef'], True)})
-# NP_Rule = Rule(NP, [Det, N])
-# 
-# 
-# Un = NodeData({'type':['Det'], 'nr':['1', '2']}) #, 'def':['Def']})
-# Tip = NodeData({'type':['N'], 'nr':['2']})
-# 
-# UnTip = NP_Rule.apply([Un, Tip])

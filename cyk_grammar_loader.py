@@ -2,7 +2,7 @@
 from rule_io import parse_rule
 from cyk_parser import Grammar
 from rule import Constraint, VAR_PREFIX, Rule
-from values import Values
+from rvalues import RValues
 
 def load_grammar(text : str):
     lines = text.split('\n')
@@ -14,11 +14,11 @@ def load_grammar(text : str):
         line = line.strip()
         if not line or line[0] == '#': continue
         line = line.split('#', 1)[0]   # end-of-line comments
-        if line.startswith('%%group'):
-            # do group instruction. Format: %%group Case,Gender,Number CGN
+        if line.startswith('%%alias'):
+            # do group instruction. Format: %%alias Case,Gender,Number CGN
             line = line.split()
             if len(line) != 3:
-                print('Bad %%group instruction line ' + line_count)
+                print('Bad %%alias instruction line ' + line_count)
                 return None
             keys = line[1].split(',')
             group = line[2]
@@ -62,8 +62,10 @@ def load_grammar(text : str):
                 for key, constraint in rule_item.items():
                     if key not in group_dict: continue
                     group = group_dict[key]
-                    new_constraints = [Constraint(g, Values(VAR_PREFIX), constraint.isStrict, constraint.isNegated) \
-                                            for g in group]
+                    isSimpleVar = (constraint.isVariable and constraint.values.get() == key)
+                    new_constraints = [Constraint(item, RValues(item, True) if isSimpleVar else constraint.values, \
+                                                  constraint.isStrict, constraint.isNegated) \
+                                                  for item in group]
                     keys_to_pop.append(key)
                     constraints_to_add += new_constraints
                 # now remove what is to be removed and add what is to be added
@@ -76,7 +78,7 @@ def load_grammar(text : str):
 
 if __name__ == "__main__":
     grammar_text = """
-        %%group caz,gen CG
+        %%alias caz,gen CG
         %score 0.666
         NP[caz=@ gen=@] ::= N[CG=@]
         AdjP ::= Adj

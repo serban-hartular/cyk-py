@@ -132,8 +132,6 @@ class Parser:
         
     # NP ::= AdjP
 if __name__ == '__main__':    
-    from values import Values
-    from rule_io import rule_list_from_string
     from cyk_grammar_loader import load_grammar
 
     grammar_rules = """

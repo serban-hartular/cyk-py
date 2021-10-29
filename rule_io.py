@@ -4,7 +4,7 @@ from lark import Lark, Tree, Token
 from typing import List
 
 import rule
-from values import Values
+from rvalues import RValues
 
 TYPE_STR = 'type'
 FORM_STR = 'form'
@@ -34,6 +34,7 @@ constraint_list :   constraint
 constraint  : VALUE EQUALS values
             | VALUE STRICT_EQ values
             | VALUE INEQ values
+            | VALUE STRICT_INEQ values
 
 values :   VALUE
        |   values "," VALUE
@@ -42,6 +43,7 @@ VALUE : /[@a-zA-Z0-9]+/
 EQUALS : "="
 STRICT_EQ : "=="
 INEQ : "!="
+STRICT_INEQ : "!=="
 
 """
 
@@ -57,10 +59,19 @@ def get_list(tree : Tree):
 def get_constraint(tree : Tree) -> rule.Constraint:
     assert tree.data == 'constraint'
     key = tree.children[0].value
-    isStrict = (tree.children[1].value == '==')
-    isNegated = (tree.children[1].value == '!=')
+    # isStrict = (tree.children[1].value == '==')
+    # isNegated = (tree.children[1].value == '!=')
+    isStrict = ('==' in tree.children[1].value)
+    isNegated = ('!' in tree.children[1].value)
+    if isNegated: isStrict = not isStrict
     values = get_list(tree.children[2])
-    return rule.Constraint(key, Values(values), isStrict, isNegated)
+    isVariable = (values[0].startswith('@'))
+    if isVariable:
+        if len(values) > 1: raise Exception('Variable can only have one item, not ' + str(values))
+        values[0] = values[0].strip('@')
+        if len(values[0]) == 0:
+            values[0] = key
+    return rule.Constraint(key, RValues(values, isVariable), isStrict, isNegated)
 
 def get_constraint_dict(tree : Tree):
     assert tree.data == 'constraint_list'
@@ -75,7 +86,7 @@ def get_constraint_dict(tree : Tree):
 
 def get_rule_item(tree : Tree) -> rule.RuleItem:
     assert tree.data == 'item'
-    d = {TYPE_STR : rule.Constraint(TYPE_STR, Values([tree.children[0].value]), True)}
+    d = {TYPE_STR : rule.Constraint(TYPE_STR, RValues([tree.children[0].value]), True)}
     if(len(tree.children) > 1):
         d.update(get_constraint_dict(tree.children[1]))
     return rule.RuleItem([c for c in d.values()]) # redo!
@@ -89,7 +100,7 @@ def get_dependent_item(tree: Tree) -> rule.RuleItem:
         deprel = None
         i = 0
     item = get_rule_item(tree.children[i])
-    if deprel: item[DEPREL_STR] = rule.Constraint(deprel, Values([deprel])) 
+    if deprel: item[DEPREL_STR] = rule.Constraint(deprel, RValues([deprel])) 
     #TO DO! might want to eliminate deprel
     return item
         

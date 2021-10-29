@@ -9,16 +9,10 @@ grammar_rules = """
 %%group Person,Number,Mood,lemma PNML
 %%group lemma L
 NP[CGNL=@] ::= NOUN[CGNL=@]
-AdjP[CGNL=@] ::= ADJ[CGNL=@]
-DetP[CGNL=@] ::= DET[CGNL=@]
-PP[L=@] ::= ADP[Case=@ L=@] NP[Case=@]
-NP[CGNL=@] ::= DetP[CGN=@] NP[CGNL=@]
-NP[CGNL=@] ::= NP[CGNL=@] AdjP[CGN=@]
-NP[CGNL=@] ::= NP[CGNL=@] PP
-VP[PNML=@] ::= NP[PN=@ Case=Nom] VERB[PNML=@]
-VP[PNML=@] ::= VP[PNML=@] PP
-VP[PNML=@] ::= VP[PNML=@] ADV
-%reverse
+QP[CGNL=@] ::= NUM[CGNL=@]
+QP[CGNL=@] ::= NUM[CGNL=@] ADP[L=de]
+NP[CGNL=@] ::= QP[CGN=@] NP[CGNL=@]
+ 
 """
 
 def parse(text : str, parser : Parser):
@@ -31,7 +25,7 @@ def parse(text : str, parser : Parser):
 
 grammar = load_grammar(grammar_rules)
 parser = Parser(grammar)
-parse('Un bou frumos mergea la mare', parser)
+parse('Doi de ani', parser)
 p = parser.get_parses()[0][0]
 
 
