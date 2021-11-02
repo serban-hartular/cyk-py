@@ -50,15 +50,21 @@ class Constraint:
             var_dict[self.key] = intersection
         return not self.isNegated 
     def to_text(self):
-        return self.key+('!=' if self.isNegated else ('==' if self.isStrict else '=')) + ','.join([v for v in self.values])
+        if not self.isNegated:
+            operator = '==' if self.isStrict else '='
+        else:
+            operator = '!=' if self.isStrict else '!=='
+        values = ','.join([v for v in self.values]) if not self.isVariable else (RValues.VAR_STR + self.values.get())
+        return self.key + operator + values
     def __str__(self):
         return self.to_text()
     def __repr__(self):
         return str(self)
 
 class RuleItem(Dict[str, Constraint]):
-    def __init__(self, l : List[Constraint]):
+    def __init__(self, l : List[Constraint], annotation : Dict = None):
         super().__init__({c.key : c for c in l})
+        self.annotation = annotation if annotation else dict()
     def matches(self, item : NodeData, variable_dict : dict, keys_to_skip = list()):
         for key, constraint in self.items():
             if key in keys_to_skip: continue
@@ -86,7 +92,7 @@ class Rule:
         self.parent = parent
         self.children = children
         self.score = 1
-    def apply(self, candidates : List[NodeData]) -> NodeData:
+    def apply(self, candidates : List[NodeData]) -> (NodeData, List[Dict]):
         if len(candidates) != len(self.children):
             return None
         # try constraints on candidates
@@ -107,7 +113,7 @@ class Rule:
             else:
                 parent_node[key] = actual_val
         for key in keys_to_pop: parent_node.pop(key)
-        return parent_node
+        return parent_node, [child.annotation for child in self.children]
     def to_text(self):
         return self.parent.to_text() + ' ::= ' + ' '.join([c.to_text() for c in self.children])
     def __str__(self):

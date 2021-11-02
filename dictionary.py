@@ -7,6 +7,8 @@ from rule import NodeData
 from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
 from typing import List
 
+import re
+
 def generate_word_dict():
     path = r'C:\Users\ffxvtj\Documents\Projects\Lingv\Corpus\\'
     filenames = [r'ro_rrt-ud-train.conllu', r'ro_rrt-ud-dev.conllu', r'ro_rrt-ud-test.conllu']
@@ -54,12 +56,14 @@ def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.Pars
     return cyk_parser.ParseSquare(tree_list)
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) -> List[cyk_parser.ParseSquare]:
-    words = text.split()
+    # words = text.split()
+    words = re.split(r'[ \t,\.\-;:\\?!@#$%^&]', text)
+    words = [w for w in words if w]
     sq_list = []
     for word in words:
         sq = word_2_parse_square(word)
         if not sq:
-            raise Exception('Unkown word ' + word)
+            raise Exception('Unkown word "%s"' % word)
         sq_list.append(sq)
     return sq_list
 

@@ -100,8 +100,8 @@ def get_dependent_item(tree: Tree) -> rule.RuleItem:
         deprel = None
         i = 0
     item = get_rule_item(tree.children[i])
-    if deprel: item[DEPREL_STR] = rule.Constraint(deprel, RValues([deprel])) 
-    #TO DO! might want to eliminate deprel
+    if deprel:
+        item.annotation[DEPREL_STR] = deprel
     return item
         
 

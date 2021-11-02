@@ -10,6 +10,7 @@ def load_grammar(text : str):
     rule_list = list()
     group_dict = dict()
     for line in lines:
+        orig_line = str(line)
         line_count += 1
         line = line.strip()
         if not line or line[0] == '#': continue
@@ -18,7 +19,7 @@ def load_grammar(text : str):
             # do group instruction. Format: %%alias Case,Gender,Number CGN
             line = line.split()
             if len(line) != 3:
-                print('Bad %%alias instruction line ' + line_count)
+                print('Bad %%alias instruction line ' + str(line_count) + '\n' + orig_line)
                 return None
             keys = line[1].split(',')
             group = line[2]
@@ -26,7 +27,7 @@ def load_grammar(text : str):
         elif line.startswith('%score'):
             line = line.split()
             if(len(line) < 2):
-                print('Bad %score line ' + line_count)
+                print('Bad %score line ' + str(line_count)  + '\n' + orig_line)
                 return None
             try:
                 score = float(line[1])
@@ -52,7 +53,7 @@ def load_grammar(text : str):
             try:
                 rule = parse_rule(line)
             except:
-                print('Parse error line ' + line_count)
+                print('Parse error line ' + str(line_count)  + '\n' + orig_line)
                 return None
             # search for groups to replace
             item_list = [rule.parent] + rule.children
