@@ -60,21 +60,22 @@ def load_grammar(text : str):
             # search for groups to replace
             item_list = [rule.parent] + rule.children
             for rule_item in item_list:
-                keys_to_pop = []
-                constraints_to_add = []
-                for key, constraint in rule_item.items():
-                    if key not in group_dict: continue
-                    group = group_dict[key]
-                    isSimpleVar = (constraint.isVariable and constraint.values.get() == key)
-                    new_constraints = [Constraint(item, RValues(item, True) if isSimpleVar else constraint.values, \
-                                                  constraint.isStrict, constraint.isNegated) \
-                                                  for item in group]
-                    keys_to_pop.append(key)
-                    constraints_to_add += new_constraints
-                # now remove what is to be removed and add what is to be added
-                for key in keys_to_pop:
-                    rule_item.pop(key)
-                rule_item.update({c.key:c for c in constraints_to_add})
+                for dicts in [rule_item.constraints, rule_item.variables]:
+                    keys_to_pop = []
+                    constraints_to_add = []
+                    for key, constraint in dicts.items():
+                        if key not in group_dict: continue
+                        group = group_dict[key]
+                        isSimpleVar = (constraint.isVariable and constraint.values.get() == key)
+                        new_constraints = [Constraint(item, RValues(item, True) if isSimpleVar else constraint.values, \
+                                                      constraint.isStrict, constraint.isNegated) \
+                                                      for item in group]
+                        keys_to_pop.append(key)
+                        constraints_to_add += new_constraints
+                    # now remove what is to be removed and add what is to be added
+                    for key in keys_to_pop:
+                        dicts.pop(key)
+                    dicts.update({c.key:c for c in constraints_to_add})
 
             rule_list.append(rule)
     return Grammar(rule_list)

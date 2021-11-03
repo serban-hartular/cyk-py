@@ -14,14 +14,14 @@ class Grammar:
         others = [r for r in rules if len(r.children) != 1 and len(r.children) != 2]
         if others:
             raise Exception("Rules can only have 1 or 2 children: '%s'" % others[0].to_text())
-        self.nonterminals = set([rule.parent[TYPE_STR].values.get() for rule in self.rules])
-        self.terminals = set([ruleitem[TYPE_STR].values.get() for rule in rules \
+        self.nonterminals = set([rule.parent.constraints[TYPE_STR].values.get() for rule in self.rules])
+        self.terminals = set([ruleitem.constraints[TYPE_STR].values.get() for rule in rules \
                               for ruleitem in ([rule.parent] + rule.children) \
-                              if ruleitem[TYPE_STR].values.get() not in self.nonterminals])
+                              if ruleitem.constraints[TYPE_STR].values.get() not in self.nonterminals])
         self.assign_scores()
     def assign_scores(self):
         for nonterm in self.nonterminals:
-            rules = [rule for rule in self.rules if rule.parent[TYPE_STR].values.get() == nonterm]
+            rules = [rule for rule in self.rules if rule.parent.constraints[TYPE_STR].values.get() == nonterm]
             for n in range(0, len(rules)):
                 rules[n].score = 1 / (n+1)
 

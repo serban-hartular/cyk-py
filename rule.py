@@ -25,6 +25,13 @@ class NodeData(Dict[str, RValues]):
 #     if val[0].startswith(VAR_PREFIX): return val[0]
 #     return None
 
+class Variable:
+    def __init__(self, key:str, value:str):
+        self.key = key
+        self.value  = value
+    def __str__(self):
+        return '%s=@%s' % (self.key, self.value)
+
 class Constraint:
     def __init__(self, key: str, values : RValues, isStrict : bool = False, isNegated : bool = False) -> None:
         if not values:
@@ -36,21 +43,26 @@ class Constraint:
         self.isVariable = self.values.isVariable
         if self.isVariable and self.isNegated:
             raise Exception("Negated equality to unknown variable not allowed")
-        # if self.isVariable and var == VAR_PREFIX:
-        #     self.values = RValues(VAR_PREFIX + key)
-    def matches(self, data : NodeData, var_dict : dict = None) -> bool:
-        if self.isVariable and var_dict is None:
-            raise Exception('Asked to evaluate variable and no var_dict provided in %s' % str(self))
+    def matches(self, data : NodeData) -> bool:
+        assert not self.isVariable
         data_values = data.get(self.key)
         if not data_values:
             data_values = RValues() if self.isStrict else RValues.all()
-        self_values = var_dict[self.key] if self.isVariable else self.values
+        self_values = self.values # var_dict[self.key] if self.isVariable else self.values
         intersection = self_values.intersection(data_values)
         if not intersection:
             return self.isNegated # true if result is empty, false if it isn't
-        if self.isVariable:
-            var_dict[self.key] = intersection
         return not self.isNegated 
+    def process_variable(self, data : NodeData, var_dict : dict):
+        assert self.isVariable
+        data_values = data[self.key] if self.key in data else RValues.all()
+        print(self.key, data_values, end='\t')
+        var_name = self.values.get()
+        intersection = var_dict[var_name].intersection(data_values)
+        print(var_name, intersection)
+        var_dict[var_name] = intersection
+        return bool(var_dict[var_name])
+
     def to_text(self):
         if not self.isNegated:
             operator = '==' if self.isStrict else '='
@@ -63,24 +75,28 @@ class Constraint:
     def __repr__(self):
         return str(self)
 
-class RuleItem(Dict[str, Constraint]):
-    def __init__(self, l : List[Constraint], annotation : Dict = None):
-        super().__init__({c.key : c for c in l})
+class RuleItem:
+    def __init__(self, constraints : List[Constraint], annotation : Dict = None):
+        self.constraints = {c.key : c for c in constraints if not c.isVariable } 
+        self.variables = {c.key : c for c in constraints if c.isVariable}
         self.annotation = annotation if annotation else dict()
-    def matches(self, item : NodeData, variable_dict : dict, keys_to_skip = list()):
-        for key, constraint in self.items():
-            if key in keys_to_skip: continue
-            if not constraint.matches(item, variable_dict):
+    def matches(self, item : NodeData, variable_dict : dict):
+        for key, constraint in self.constraints.items():
+            if not constraint.matches(item):
+                return False
+        for key, variable in self.variables.items():
+            if not variable.process_variable(item, variable_dict):
                 return False
         return True
     def to_node(self):
-        return NodeData({k:v.values for k, v in self.items()})
+        return NodeData({k:v.values for k, v in self.constraints.items()})
     def to_text(self):
-        text = self[TYPE_STR].values.get() if TYPE_STR in self.keys() else ''
-        keys_less_type = [k for k in self.keys() if k != TYPE_STR]
-        if not keys_less_type: return text
+        text = self.constraints[TYPE_STR].values.get() if TYPE_STR in self.constraints else ''
+        keys_less_type = [k for k in self.constraints if k != TYPE_STR]
+        if not keys_less_type and not self.variables: return text
         text += '['
-        text += ' '.join([self[k].to_text() for k in keys_less_type])
+        text += ' '.join([self.constraints[k].to_text() for k in keys_less_type] + 
+                         [self.variables[k].to_text() for k in self.variables])
         text += ']'
         return text
     def __str__(self):
@@ -104,17 +120,14 @@ class Rule:
                 return None
         parent_node = NodeData(self.parent.to_node())
         # look for variables
-        keys_to_pop = []
-        for key, value in parent_node.items():
-            # var = isVar(value)
-            if not value.isVariable: continue
-            actual_val = variable_dict.get(key)
-            if not actual_val: return None
-            if actual_val.isAll():
-                keys_to_pop.append(key) # if isAll() -- no new info, pop
-            else:
-                parent_node[key] = actual_val
-        for key in keys_to_pop: parent_node.pop(key)
+        print(variable_dict)
+        for key, var_name in self.parent.variables.items():
+            var_name = var_name.values.get()
+            value = variable_dict[var_name]
+            print(var_name, value)
+            if value.isAll(): continue
+            parent_node[key] = value
+        print(parent_node)
         return parent_node, [child.annotation for child in self.children]
     def to_text(self):
         return self.parent.to_text() + ' ::= ' + ' '.join([c.to_text() for c in self.children])
