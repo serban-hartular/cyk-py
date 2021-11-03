@@ -4,6 +4,8 @@ from cyk_parser import Grammar
 from rule import Constraint, VAR_PREFIX, Rule
 from rvalues import RValues
 
+COMMENT_STR = '#'
+
 def load_grammar(text : str):
     lines = text.split('\n')
     line_count = 0
@@ -13,8 +15,8 @@ def load_grammar(text : str):
         orig_line = str(line)
         line_count += 1
         line = line.strip()
-        if not line or line[0] == '#': continue
-        line = line.split('#', 1)[0]   # end-of-line comments
+        if not line or line[0] == COMMENT_STR: continue
+        line = line.split(COMMENT_STR, 1)[0]   # end-of-line comments
         if line.startswith('%%alias'):
             # do group instruction. Format: %%alias Case,Gender,Number CGN
             line = line.split()

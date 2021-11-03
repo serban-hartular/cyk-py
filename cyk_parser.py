@@ -36,13 +36,20 @@ class Tree:
             self.form = ' '.join([s for s in data[FORM_STR]]) if FORM_STR in data else ''
         else:
             self.form = ' '.join([c.form for c in self.children])
-        self.type = self.data[TYPE_STR].get() if TYPE_STR in self.data.keys() else ''
+        self.type = self.data[TYPE_STR].get() if TYPE_STR in self.data.keys() else '?'
         self.assign_score()
 
     def assign_score(self):
         self.score = self.rule.score if self.rule else 1
         for child in self.children:
             self.score *= child.score
+    def to_jsonable(self, add_children = False) -> dict:
+        str_attrs = ['type', 'form', 'score', 'rule']
+        obj = {k:str(self.__getattribute__(k)) for k in str_attrs}
+        obj['data'] = self.data.to_jsonable()
+        if add_children:
+            obj['children'] = [child.to_jsonable(add_children) for child in self.children]
+        return obj
     def traverse(self):
         yield self
         for child in self.children:
@@ -175,4 +182,22 @@ class Parser:
             parses2 = self.get_parses(childpos2)
             combos += [l1 + l2 for l1 in parses1 for l2 in parses2] # concatenate combinations
         return combos
-    
+    def to_jsonable(self):
+        tree_list = []
+        N = len(self.table)
+        table = list()  # array that holds the rows        
+        for row_index in range(0, N):  # create row
+            row = [list() for col in range(row_index, len(self.table))]
+            table.append(row)
+            for col_index in range(0, len(row)):
+                for tree in self.table[row_index][col_index]:
+                    table[row_index][col_index].append(len(tree_list)) #this will be the tree ID
+                    tree_list.append(tree)  # tree ID is index of tree in list
+        tree_json_list = []
+        for i in range(0, len(tree_list)):
+            tree_json = tree_list[i].to_jsonable()
+            tree_json['id'] = i
+            tree_json['children'] = [tree_list.index(child) for child in tree_list[i].children]
+            tree_json_list.append(tree_json)
+        return {'nodes':tree_json_list, 'table':table}
+            

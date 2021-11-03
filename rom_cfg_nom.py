@@ -18,7 +18,8 @@ QP[CGNL=@] ::= NUM[CGNL=@]
 
 adj_cfg = """
 AdjP[CGNL=@] ::= ADJ[CGNL=@]
-AdjP[CGNL=@] ::= GV[CGNL=@ VerbForm=Part]
+AdjP[CNG=@ L=care] ::= RP[CNG=@ L=care,ce]
+AdjP[CGNL=@] ::= VP[CGNL=@ VerbForm=Part]
 AdjP[CGNL=@] ::= AdvP AdjP[CGNL=@]
 AdjP[CGN=@ L=@] ::= AdjP[CGN=@] AdjPConj[CGNL=@]
 AdjPConj[CGN=@ L=@] ::= CCONJ[L=@] AdjP[CGN=@] 
@@ -26,7 +27,7 @@ AdjPConj[CGN=@ L=@] ::= CCONJ[L=@] AdjP[CGN=@]
 
 noun_cfg = """
 N0[CGNPL=@ det=T Person=3] ::= DetP[CGN=@] N0[CGNL=@ det=F]
-N0[CGNPL=@] ::= PRON[CGNPL=@]
+N0[CGNPL=@] ::= PRON[CGNPL=@ PronType!=Rel]
 N0[CGNPL=@] ::= PROPN[CGNPL=@]
 N0[CGNL=@ Person=3] ::= NOUN[CGNL=@]
 N0[CGNL=@ Person=3] ::= AdjP[CGN=@] NOUN[CGNL=@]
@@ -43,13 +44,15 @@ NP[CGNPL=@] ::= NP[CGNPL=@] NP[Case=Nom]
 """
 
 adv_cfg = """
-AdvP ::= ADV
+AdvP[L=@] ::= ADV[L=@]
+AdvP[L=@] ::= ADP AdvP[L=@] # pe sus, de departe
 """
 
 pp_cfg = """
 PREP[Case=@] ::= ADP[Case=@]
 PREP[Case=@] ::= PREP ADP[Case=@]
 PP ::= PREP[Case=@] NP[Case=@]
+PP ::= PREP VP[VerbForm=Inf]    # pentru a scapa
 """
 
 cfg_list = [nom_aliases, det_cfg, num_cfg, adj_cfg, noun_cfg, adv_cfg, pp_cfg]

@@ -67,3 +67,7 @@ class RValues(Set[str]):
         if self.isAll():
             return RValues.ALL_STR
         return (RValues.VAR_STR if self.isVariable else '') + ','.join([str(s) for s in self])
+    def to_jsonable(self):
+        obj = list(self)
+        if self.isVariable: obj[0] = '@' + obj[0]
+        return obj

@@ -26,7 +26,7 @@ def parse(text : str, parser : Parser) -> bool:
 if __name__ == "__main__":
     grammar = load_grammar(grammar_rules)
     parser = Parser(grammar)
-    if parse('Winston Smith, cu bărbia înfundată în piept', parser):
+    if parse('Tu mergi la gară', parser):
         p = parser.get_parses()
         p.sort(key=lambda n: len(n))
         p = parser.get_parses()[0]

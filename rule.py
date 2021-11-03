@@ -16,6 +16,8 @@ class NodeData(Dict[str, RValues]):
             self[k] = RValues(v)
     def __setitem__(self, key, value):
         super().__setitem__(key, RValues(value))
+    def to_jsonable(self) -> dict:
+        return {k: self[k].to_jsonable() for k in self.keys()}
 
 # def isVar(val : RValues):
 #     if not val or len(val) != 1: return None
