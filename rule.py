@@ -56,10 +56,10 @@ class Constraint:
     def process_variable(self, data : NodeData, var_dict : dict):
         assert self.isVariable
         data_values = data[self.key] if self.key in data else RValues.all()
-        print(self.key, data_values, end='\t')
+        # print(self.key, data_values, end='\t')
         var_name = self.values.get()
         intersection = var_dict[var_name].intersection(data_values)
-        print(var_name, intersection)
+        # print(var_name, intersection)
         var_dict[var_name] = intersection
         return bool(var_dict[var_name])
 
@@ -120,14 +120,14 @@ class Rule:
                 return None
         parent_node = NodeData(self.parent.to_node())
         # look for variables
-        print(variable_dict)
+        # print(variable_dict)
         for key, var_name in self.parent.variables.items():
             var_name = var_name.values.get()
             value = variable_dict[var_name]
-            print(var_name, value)
+            # print(var_name, value)
             if value.isAll(): continue
             parent_node[key] = value
-        print(parent_node)
+        # print(parent_node)
         return parent_node, [child.annotation for child in self.children]
     def to_text(self):
         return self.parent.to_text() + ' ::= ' + ' '.join([c.to_text() for c in self.children])
