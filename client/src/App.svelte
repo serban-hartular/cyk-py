@@ -1,8 +1,8 @@
 <script lang="ts">
 	
-	import Square from "./Square.svelte";
-
-	import  { TreeLibrary } from "./tree";
+import ParseTable from "./ParseTable.svelte";
+import  { TreeLibrary } from "./parse_tree";
+import SvgTree from "./SvgTree.svelte";
 
 	export let sentence: string
 	let message: string = ''
@@ -30,7 +30,7 @@
 		await request(sentence)
 		.then(value =>  response = value)
 		.catch(reason => response = reason)
-		console.log(JSON.stringify(response))
+		// console.log(JSON.stringify(response))
 		if(!response.error_msg) {
 			tree_library = new TreeLibrary(response.data.nodes, response.data.table)
 			message = 'Parse OK'
@@ -58,24 +58,13 @@
 	<p>{message}</p>
 
 	{#if tree_library}
-	<table >
-		{#each tree_library.parse_table as row}
-		<tr>
-			{#each row as square}
-			<td>
-				<Square bind:tree_library={tree_library} bind:id_list={square} />
-			</td>
-			{/each}
-		</tr>
-		{/each}
-		<!-- Insert bottom row with words -->
-		<tr>
-			{#each tree_library.parse_table[tree_library.parse_table.length-1] as word}
-				<td>{tree_library.get(word[0]).form}</td>
-			{/each}
-		</tr>
-	</table>
+		<ParseTable bind:tree_library={tree_library} />
 	{/if}
+
+	{#if tree_library && tree_library.selected != undefined }
+		<SvgTree bind:tree_library={tree_library} bind:root_id={tree_library.selected} />
+	{/if}
+
 
 	</main>
 
@@ -86,16 +75,6 @@
 		max-width: 240px;
 		margin: 0 auto;
 	}
-
-	table, td {
-  		border: 1px solid black;
-		vertical-align: top;
-	}
-
-	table {
-  		border-collapse: collapse;
-	}
-
 	
 	@media (min-width: 640px) {
 		main {

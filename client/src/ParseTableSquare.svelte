@@ -1,17 +1,17 @@
 <script lang="ts">
 import { get } from "svelte/store";
-import type { TreeLibrary } from "./tree";
+import type { TreeLibrary } from "./parse_tree";
 
 export let tree_library : TreeLibrary
-export let id_list : Array<number>
+export let id_list : Array<string>
 
-    function setSelected(id : number) {
+    function setSelected(id : string) {
         tree_library.setSelected(id)
         tree_library = tree_library //trigger
         // console.log(id)
     }
 
-    function classFromId(id: number) {
+    function classFromId(id: string) {
         if(id == tree_library.selected)
             return 'selected'
         if(tree_library.selected_children.includes(id))
@@ -22,20 +22,16 @@ export let id_list : Array<number>
     }
 
     function score2string(score : number): string {
-        score *= 100
-        if(score < 10)
-            return(score.toFixed(1) + '%')
-        else
-            return(score.toFixed(0) + '%')
+        return score.toFixed(2)
     }
 
-    let selected : number = -1
-    let to_display = Array<number>()
-    let ordered_display = new Array<number>()
+    let selected : string = ""
+    let to_display = Array<string>()
+    let ordered_display = new Array<string>()
 
 $:{ tree_library;
     to_display = id_list.filter(id => tree_library.isSelectedOrDescendant(id))
-    ordered_display = new Array<number>()
+    ordered_display = new Array<string>()
     if(to_display.length > 0) {
         //fill in ordered_display, parent first, child next, grandkid next, etc
         ordered_display.push(to_display.pop())
@@ -64,7 +60,7 @@ $:{ tree_library;
         }
     }
     // console.log(to_display, ordered_display)
-    if(selected != tree_library.selected) selected = -1
+    if(selected != tree_library.selected) selected = ""
 }
 
 </script>
