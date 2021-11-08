@@ -49,6 +49,7 @@ class Tree:
         obj['data'] = self.data.to_jsonable()
         if add_children:
             obj['children'] = [child.to_jsonable(add_children) for child in self.children]
+        obj['children_annot'] = self.children_annot
         return obj
     def traverse(self):
         yield self

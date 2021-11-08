@@ -7,6 +7,7 @@ export class Node {
     form : string
     children_ids : Array<string>
     children : Array<Node>
+    children_deprels : Array<string>
     constructor(json_node : Object) {
         this.data = json_node['data']
         this.id = String(json_node['id'])
@@ -15,9 +16,14 @@ export class Node {
         this.type = json_node['type']
         this.form = json_node['form']
         this.children_ids = json_node['children'].map((n) => String(n))
-        // console.log(this.form, this.id)
-        // console.log(this.children_ids)
         this.children = null
+        this.children_deprels = new Array<string>()
+        if(json_node['children_annot'] != undefined) {
+            for(let annotation of json_node['children_annot']) {
+                let deprel = annotation['deprel']
+                this.children_deprels.push(deprel == undefined ? '' : deprel)
+            }
+        }
     }
 }
 
@@ -58,8 +64,6 @@ export class TreeLibrary {
                 }
             }
         }
-        // console.log(this.tree_map)
-        // console.log(this.parse_table)
         this.setSelected(this.parse_table[0][0][0])
     }
 
@@ -97,5 +101,12 @@ export class TreeLibrary {
     isSelectedOrDescendant(id : string) : boolean {
         return id == this.selected || this.selected_children.includes(id) 
             || this.selected_descendants.includes(id)
+    }
+
+    *traverse(id : string) {
+        yield id
+        for(let child_id of this.get(id).children_ids)
+            for(let y of this.traverse(child_id))
+                yield y
     }
 }

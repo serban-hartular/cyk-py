@@ -17,12 +17,15 @@ export default class SvgNode {
     top_y : number
     row : number
     col : number
+    children_deprels : Array<string> 
     //svg_element : SVGGraphicsElement
     children : Array<string>
-    constructor(id : string, text : string, children : Array<string>) {
+    constructor(id : string, text : string, children : Array<string>,
+            children_deprels : Array<string>) {
         this.id = id
         this.text = text
         this.children = children
+        this.children_deprels = children_deprels
     }
     calcTopBottom() {
         this.mid_x =    this.x + this.w / 2
@@ -41,19 +44,22 @@ export class Line {
     x2 : number
     y1 : number
     y2 : number
-    constructor(parent_id : string, child_id: string, x1 : number, y1 : number, x2 : number, y2 : number) {
+    deprel : string
+    constructor(parent_id : string, child_id: string, x1 : number, y1 : number, x2 : number, y2 : number,
+        deprel : string = '') {
         this.parent_id = parent_id
         this.child_id = child_id
         this.x1 = x1
         this.y1 = y1
         this.x2 = x2
         this.y2 = y2
+        this.deprel = deprel
     }
 }
 
 export class SvgMap extends Map<string, SvgNode>{
-    width : number
-    height : number
+    width : number = 300
+    height : number = 300
     lines : Array<Line> = new Array<Line>()
     root_id : string
     static line_offset_y = 3
@@ -64,17 +70,18 @@ export class SvgMap extends Map<string, SvgNode>{
     constructor(tree_library : TreeLibrary, root_id : string) {
         super()
         this.root_id = root_id
-        let ids = [root_id].concat(tree_library.getDescendants(root_id))
-        for(let id of ids) {
+        // let ids = [root_id].concat(tree_library.getDescendants(root_id))
+        // for(let id of ids) {
+        for(let id of tree_library.traverse(root_id)) {
             let tree = tree_library.get(id)
-            let node = new SvgNode(id, tree.type, tree.children_ids)
+            let node = new SvgNode(id, tree.type, tree.children_ids, tree.children_deprels)
             let [row, col] = tree_library.position_map.get(id)
             node.row = row
             node.col = col
             this.set(id, node)
             if(tree.children_ids.length == 0) { //this is a leaf
                 //add a word node
-                let word = new SvgNode('w'+id, tree.form, [])
+                let word = new SvgNode('w'+id, tree.form, [], [])
                 word.row = node.row + 1
                 word.col = node.col
                 node.children = [word.id]
@@ -94,15 +101,15 @@ export class SvgMap extends Map<string, SvgNode>{
             this.setFirstCoordinates(child_id, depth+1)
     }
     generateLines() {
-        //generate lines
-        console.log(this)
         this.lines = new Array<Line>()
         for(let parent of Array.from(this.values())) {
-            for(let child_id of parent.children) {
+            for(let i = 0; i < parent.children.length; i++) {
+                let child_id = parent.children[i]
+                let deprel = parent.children_deprels[i]
                 let child = this.get(child_id)
                 let line = new Line(parent.id, child_id,
                     parent.mid_x, parent.y + SvgMap.line_offset_y,
-                    child.mid_x, child.top_y - SvgMap.line_offset_y)
+                    child.mid_x, child.top_y - SvgMap.line_offset_y, deprel)
                 this.lines.push(line)
             }
         }
@@ -116,7 +123,9 @@ export class SvgMap extends Map<string, SvgNode>{
             if(current_w == undefined || current_w < node.w)
                 width_map.set(node.col, node.w)
             if(node.col > max_col) max_col = node.col
+            if(node.y > this.height) this.height = node.y
         }
+        if(this.height > 300) this.height += 10
         max_col += 1
         this.width_array = new Array<number>()
         this.x_array = new Array<number>()
@@ -125,8 +134,7 @@ export class SvgMap extends Map<string, SvgNode>{
                 0 : width_map.get(col) + SvgMap.width_padding)
             this.x_array.push(col == 0 ? 0 : this.width_array[col-1] + this.x_array[col-1])
         }
-        console.log(this.x_array)
-        console.log(this.width_array)
+        this.width = this.x_array[this.x_array.length-1] + this.width_array[this.width_array.length-1]
         this.setMidpoints()
         this.generateLines()
     }

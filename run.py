@@ -26,7 +26,8 @@ def parse(text : str, parser : Parser) -> bool:
 if __name__ == "__main__":
     grammar = load_grammar(grammar_rules)
     parser = Parser(grammar)
-    if parse('Tu mergi la mare', parser):
+    print('Parsing...')
+    if parse('Omul are multe degete cu multe picioare galbene', parser):
         p = parser.get_parses()
         p.sort(key=lambda n: len(n))
         p = parser.get_parses()[0]
