@@ -37,10 +37,10 @@ N0[CGNL=@ Person=3] ::= NOUN[CGNL=@] QP
 NP[CGNPL=@] ::= N0[CGNPL=@]
 NP[CGNPL=@] ::= NP[CGNPL=@] AdjP[CGN=@]
 %reverse
-NP[CGNPL=@] ::= NP[CGNPL=@] NP[Case=Gen]
+NP[CGNPL=@] ::= NP[CGNPL=@] poss:NP[Case==Gen]
 %reverse
 NP[CGNPL=@] ::= NP[CGNPL=@] PP
-NP[CGNPL=@] ::= NP[CGNPL=@] NP[Case=Nom]
+NP[CGNPL=@] ::= NP[CGNPL=@] appos:NP[Case=Nom Number=@]
 """
 
 adv_cfg = """

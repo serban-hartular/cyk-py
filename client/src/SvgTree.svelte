@@ -95,8 +95,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 </td>
 <td>
 {#if clicked}
-<b>{clicked.type}</b><br/>
-<i>"{clicked.form}"</i><br/>
+<b>{clicked.type}</b>: <i>"{clicked.form}"</i><br/>
 {#each Array.from(clicked_data.keys()) as key}
 	{key}: {clicked_data.get(key)}<br/>
 {/each}

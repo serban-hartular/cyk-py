@@ -5,7 +5,6 @@ from cyk_grammar_loader import load_grammar
 import rom_cfg_nom
 import rom_cfg_verb
 
-grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # """
 # %%alias Case,Gender,Number CGN 
 # %%alias lemma L
@@ -14,21 +13,23 @@ grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # NP[CGN=@ DQ=T] ::= DET[CGN=@] NP[CGN=@ DQ=F] 
 # """
 
-def parse(text : str, parser : Parser) -> bool:
+# grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
+grammar_rules = """
+%%alias VerbForm,Mood,Tense,Person,Number,lemma VMTPNL
+%%alias Mood,Tense,Person,Number,lemma MTPNL
+
+V0[VerbForm=Gaa Person=@] ::= h:VERB[VerbForm=Fin,Ger] PRON[Person=@]
+"""
+
+grammar = load_grammar(grammar_rules)
+parser = Parser(grammar)
+
+def parse(text : str, _parser : Parser = parser):
     try:
         sq_list = text_2_square_list(text)
     except Exception as e:
         print(e)
         return False
-    parser.parse(sq_list)
-    return True
+    _parser.parse(sq_list)
+    return _parser.get_parses()[0]
 
-if __name__ == "__main__":
-    grammar = load_grammar(grammar_rules)
-    parser = Parser(grammar)
-    print('Parsing...')
-    if parse('Omul are multe degete cu multe picioare galbene', parser):
-        p = parser.get_parses()
-        p.sort(key=lambda n: len(n))
-        p = parser.get_parses()[0]
-        print(p[0].detail2())

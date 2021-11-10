@@ -1,19 +1,21 @@
 
 from typing import Dict, List
 from collections import defaultdict
+
 TYPE_STR = 'type'
-
 VAR_PREFIX = '@'
-
+DEPREL_STR = 'deprel'
+HEAD_STR = 'h'
 
 # RValues = List[str]
 from rvalues import RValues
 
 class NodeData(Dict[str, RValues]):
-    def __init__(self, d : dict):
+    def __init__(self, d : dict = None):
         super().__init__()
-        for k,v in d.items():
-            self[k] = RValues(v)
+        if d:
+            for k,v in d.items():
+                self[k] = RValues(v)
     def __setitem__(self, key, value):
         super().__setitem__(key, RValues(value))
     def to_jsonable(self) -> dict:
@@ -91,7 +93,8 @@ class RuleItem:
     def to_node(self):
         return NodeData({k:v.values for k, v in self.constraints.items()})
     def to_text(self):
-        text = self.constraints[TYPE_STR].values.get() if TYPE_STR in self.constraints else ''
+        text = (self.annotation[DEPREL_STR] + ':') if DEPREL_STR in self.annotation else ''
+        text += self.constraints[TYPE_STR].values.get() if TYPE_STR in self.constraints else ''
         keys_less_type = [k for k in self.constraints if k != TYPE_STR]
         if not keys_less_type and not self.variables: return text
         text += '['
@@ -118,7 +121,14 @@ class Rule:
         for i in range(0, len(candidates)):
             if not self.children[i].matches(candidates[i], variable_dict):
                 return None
-        parent_node = NodeData(self.parent.to_node())
+        #create parent node. First add head data if there is any
+        parent_node = NodeData()
+        for child, candidate in zip(self.children, candidates):
+            if(child.annotation.get(DEPREL_STR) == HEAD_STR):
+                parent_node.update(candidate)
+        #now add the parent_node data
+        # parent_node = NodeData(self.parent.to_node())
+        parent_node.update(self.parent.to_node())
         # look for variables
         # print(variable_dict)
         for key, var_name in self.parent.variables.items():

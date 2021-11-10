@@ -10,7 +10,7 @@ TYPE_STR = 'type'
 FORM_STR = 'form'
 DEPREL_STR = 'deprel'
 LEMMA_STR = 'lemma'
-
+HEAD_STR = 'h'
 
 grammar = """
 %import common.WS
@@ -39,7 +39,7 @@ constraint  : VALUE EQUALS values
 values :   VALUE
        |   values "," VALUE
 
-VALUE : /[@a-zA-Z0-9]+/
+VALUE : /[_@a-zA-Z0-9ăîâșț]+/
 EQUALS : "="
 STRICT_EQ : "=="
 INEQ : "!="
@@ -73,23 +73,29 @@ def get_constraint(tree : Tree) -> rule.Constraint:
             values[0] = key
     return rule.Constraint(key, RValues(values, isVariable), isStrict, isNegated)
 
-def get_constraint_dict(tree : Tree):
+# def get_constraint_dict(tree : Tree):
+def get_constraint_list(tree : Tree):
     assert tree.data == 'constraint_list'
-    d = {}
+    # d = {}
+    l = []
     for child in tree.children:
         if child.data == 'constraint':
             constraint = get_constraint(child)
-            d[constraint.key] = constraint
+            # d[constraint.key] = constraint
+            l.append(constraint)
         else:
-            d.update(get_constraint_dict(child))
-    return d
+            # d.update(get_constraint_dict(child))
+            l += get_constraint_list(child)
+    return l #d
 
 def get_rule_item(tree : Tree) -> rule.RuleItem:
     assert tree.data == 'item'
-    d = {TYPE_STR : rule.Constraint(TYPE_STR, RValues([tree.children[0].value]), True)}
+    # d = {TYPE_STR : rule.Constraint(TYPE_STR, RValues([tree.children[0].value]), True)}
+    constraints = [rule.Constraint(TYPE_STR, RValues([tree.children[0].value]), True)]
     if(len(tree.children) > 1):
-        d.update(get_constraint_dict(tree.children[1]))
-    return rule.RuleItem([c for c in d.values()]) # redo!
+        # d.update(get_constraint_dict(tree.children[1]))
+        constraints += get_constraint_list(tree.children[1])
+    return rule.RuleItem(constraints) #([c for c in d.values()])
 
 def get_dependent_item(tree: Tree) -> rule.RuleItem:
     assert tree.data == "dependent"
