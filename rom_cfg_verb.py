@@ -7,54 +7,57 @@ verb_aliases = """
 %%alias Number,lemma NL
 """
 
+
 verb_cfg = """
-V0[VerbForm=Fin MTPNL=@] ::= VERB[VerbForm=Fin MTPNL=@]
-V0[VerbForm=Ger MTPNL=@] ::= VERB[VerbForm=Ger MTPNL=@]
-V0[VerbForm=Inf MTPNL=@] ::= PART[PartType=Inf] VERB[VerbForm=Inf MTPNL=@]
-V0[VerbForm=Part MTPNL=@] ::= VERB[VerbForm=Part MTPNL=@]
+V0 ::= h:VERB[VerbForm=Fin,Ger,Part]
+V0 ::= PART[PartType=Inf] h:VERB[VerbForm=Inf]
 
-AUXP[PNL=@] ::= AUX[PNL=@]
-AUXP[PNL=@] ::= AUXP[PNL=@] ADV        # am tot cam mai venit
-V0[VerbForm=Fin Mood=Ind Tense=Perf PNL=@] ::= AUXP[lemma=avea PN=@] VERB[VerbForm=Part Gender=Masc Number=Sing lemma=@] 
-V0[VerbForm=Fin Mood=Cond Tense=Pres PNL=@] ::= AUXP[lemma=avea PN=@] VERB[VerbForm=Inf lemma=@]
-FI_PART[lemma=@] ::= AUX[lemma=fi Tense=Pres VerbForm=Inf] VERB[VerbForm=Part Gender=Masc Number=Sing lemma=@]
-V0[VerbForm=Fin Mood=Cond Tense=Perf PNL=@] ::= AUXP[lemma=avea PN=@] FI_PART[lemma=@]
-SPART ::= PART[Mood=Sub lemma=să]
-SPART ::= SPART ADV # să tot vină
-V0[VerbForm=Fin Mood=Sub Tense=Pres Pers=3 NL=@] ::= SPART VERB[VerbForm=Fin Mood=Subj Pers=3 NL=@]
-V0[VerbForm=Fin Mood=Sub Tense=Pres Pers=1 NL=@] ::= SPART VERB[VerbForm=Fin Mood=Subj,Ind Pers=1 NL=@]
-V0[VerbForm=Fin Mood=Sub Tense=Pres Pers=2 NL=@] ::= SPART VERB[VerbForm=Fin Mood=Subj,Ind Pers=3 NL=@]
-V0[VerbForm=Fin Mood=Sub Tense=Perf lemma=@] ::= SPART FI_PART[lemma=@]
-
+AUXP ::= h:AUX
+AUXP ::= h:AUXP ADV        # am tot cam mai venit
+# perfectul compus
+V0[VerbForm=Fin Mood=Ind Tense=Perf Comp=T PNL=@] ::= AUXP[lemma=avea PN=@] VERB[VerbForm=Part Gender=Masc Number=Sing lemma=@] 
+#conditionalul
+V0[VerbForm=Fin Mood=Cond Tense=Pres Comp=T] ::= AUXP[lemma=avea PN=@] h:VERB[VerbForm=Inf]
+FI_PART ::= AUX[lemma=fi Tense=Pres VerbForm=Inf] h:VERB[VerbForm=Part Gender=Masc Number=Sing]
+V0[VerbForm=Fin Mood=Cond Tense=Perf PN=@ Comp=T] ::= AUXP[lemma=avea PN=@] h:FI_PART
+#subjonctivul
+SPART ::= h:PART[Mood=Sub lemma=să]
+SPART ::= h:SPART ADV # să tot vină
+V0[VerbForm=Fin Mood=Subj Tense=Pres] ::= SPART h:V0[VerbForm=Fin Mood=Subj Tense=Pres Pers=3]
+V0[VerbForm=Fin Mood=Subj Tense=Pres] ::= SPART h:V0[VerbForm=Fin Mood=Subj,Ind Tense=Pres Pers=1,2]
+V0[VerbForm=Fin Mood=Subj Tense=Perf] ::= SPART h:FI_PART[lemma=@]
 """
+
+clitics_cfg = """
+DCLT ::= h:PRON[PronType=Prs Strength=Weak Case=Acc]
+ICLT ::= h:PRON[PronType=Prs Strength=Weak Case=Dat]
+# simple tenses
+V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=@3] ::= dclt:DCLT[Person=@1 Number=@2 Gender=@3] h:V0[Dclt=F Iclt=F VerbForm=Fin Comp=F]
+V0[Iclt=T IcltP=@1 IcltN=@2 IcltG=@3] ::= iclt:ICLT[Person=@1 Number=@2 Gender=@3] h:V0[Iclt=F VerbForm=Fin Comp=F]
+# perfect composite
+V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=Masc] ::= dclt:DCLT[Person=@1 Number=@2 Gender=Masc] h:V0[VerbForm=Fin Comp=T Dclt=F Iclt=F]
+V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=Fem] ::= h:V0[VerbForm=Fin Comp=T Dclt=F] dclt:DCLT[Person=@1 Number=@2 Gender=Fem]
+V0[Iclt=T IcltP=@1 IcltN=@2 IcltG=@3] ::= iclt:ICLT[Person=@1 Number=@2 Gender=@3] h:V0[VerbForm=Fin Comp=T Iclt=F]
+"""
+
 
 vp_cfg = """
 %%alias subj,iobj,dobj VARGS
-%%alias subj,iobj SI
-%%alias subj,dobj SD
-%%alias dobj,iobj DI
 
-VP[VMTPNL=@] ::= V0[VMTPNL=@]
-VP[MTPNL=@ subj=T DI=@ VerbForm=Fin] ::= subj:NP[Case=Nom Number=@ Person=@] VP[MTPNL=@ subj=F DI=@ VerbForm=Fin]
+VP ::= h:V0
+VP[subj=T] ::= subj:NP[Case=Nom PN=@] h:VP[VerbForm=Fin subj=F PN=@]
 %reverse
-VP[MTPNL=@ dobj=T SI=@ VerbForm=Fin] ::= VP[MTPNL=@ dobj=F SI=@ VerbForm=Fin] dobj:NP[Case=Acc]
+VP[dobj=T] ::= h:VP[dobj=F VerbForm!=Part DcltP=@1 DcltN=@2 DcltG=@3] dobj:NP[Case=Acc Person=@1 Number=@2 Gender=@3]
 %reverse
-VP[VMTPNL=@ iobj=T SD=@] ::= VP[VMTPNL=@ iobj=F SD=@] iobj:NP[Case==Dat]
+VP[iobj=T] ::= h:VP[iobj=F IcltP=@1 IcltN=@2 IcltG=@3] iobj:NP[Case==Dat Person=@1 Number=@2 Gender=@3]
 %reverse
-VP[VMTPNL=@ VARGS=@] ::= VP[VMTPNL=@ VARGS=@] AdvP
+VP ::= h:VP AdvP
 %reverse
-VP[VMTPNL=@ VARGS=@] ::= VP[VMTPNL=@ VARGS=@] PP
+VP ::= h:VP PP
 %reverse
-
-VP[MTPNL=@ dobj=T SI=@ VerbForm=Inf] ::= VP[MTPNL=@ dobj=F SI=@ VerbForm=Inf] dobj:NP[Case=Acc]
-%reverse
-VP[MTPNL=@ dobj=T SI=@ VerbForm=Ger] ::= VP[MTPNL=@ dobj=F SI=@ VerbForm=Ger] dobj:NP[Case=Acc]
-%reverse
-
 """
 
 cp_cfg = """
-SbjvP[Person=@ Number=@ Mood=Sub] ::= PART[Mood==Sub] VP[Person=@ Number=@ Mood=Sub]
 CP ::= SCONJ VP
 REL ::= PRON[PronType==Rel]
 REL ::= ADV[PronType==Rel]
@@ -62,4 +65,4 @@ REL ::= PREP[Case=@] REL[Case=@]
 RP ::= REL VP
 """
 
-cfg_list = [verb_aliases, verb_cfg, vp_cfg, cp_cfg]
+cfg_list = [verb_aliases, clitics_cfg, verb_cfg, vp_cfg, cp_cfg]

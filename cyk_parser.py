@@ -5,6 +5,8 @@ from typing import List, Dict, Tuple
 
 
 # FORM_STR = rule.FORM_STR
+from rvalues import RValues
+
 
 class Grammar:
     def __init__(self, rules : List[Rule]):
@@ -172,17 +174,24 @@ class Parser:
                     if not prune_similar or (prune_similar and not similar): # to ommit if similar
                         square.append(new_node)        
 
-    def get_parses(self, position : tuple = None) -> List[List[Tree]]:
+    def get_parses(self, position : tuple = None) -> List[Tree]:
         (row, col) = position if position else (len(self.table)-1, 0)
-        if self.table[row][col]: return [self.table[row][col]]
+        if self.table[row][col]: # done!
+            return self.table[row][col]
         # try children positions
-        combos = []
+        dummy_nodes = []
         for possible_children in Parser.generate_child_squares(row, col):
             (childpos1, childpos2) = possible_children
             parses1 = self.get_parses(childpos1)
             parses2 = self.get_parses(childpos2)
-            combos += [l1 + l2 for l1 in parses1 for l2 in parses2] # concatenate combinations
-        return combos
+            print(parses1)
+            print(parses2)
+            for child1 in parses1:
+                for child2 in parses2:
+                    dummy = Tree(NodeData({TYPE_STR: RValues({'DUMMY'})}), None, [child1, child2])
+                    dummy_nodes.append(dummy)
+        dummy_nodes.sort(key=lambda n : -n.score)
+        return dummy_nodes
     def to_jsonable(self):
         tree_list = []
         N = len(self.table)

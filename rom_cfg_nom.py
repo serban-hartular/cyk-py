@@ -1,58 +1,55 @@
 
 nom_aliases = """
 %%alias Case,Gender,Number CGN 
-%%alias Case,Gender,Number,lemma CGNL
-%%alias Case,Gender,Number,Person,lemma CGNPL
+%%alias Case,Gender,Number,lemma CGNL 
 %%alias lemma L
 """
 
 det_cfg = """
-DetP[CGNL=@] ::= DET[CGNL=@]
-DetP[CGNL=@] ::= QP[CGNL=@]
-DetP[CGNL=@] ::= DET[CGNL=@] QP[CGNL=@]
+DetP ::= h:DET
+DetP ::= h:QP
+DetP[CGN=@] ::= h:DET[CGN=@] h:QP[CGN=@]
 """
 
 num_cfg = """
-QP[CGNL=@] ::= NUM[CGNL=@]
+QP ::= h:NUM
 """
 
 adj_cfg = """
-AdjP[CGNL=@] ::= ADJ[CGNL=@]
-AdjP[CNG=@ L=care] ::= RP[CNG=@ L=care,ce]
+AdjP ::= h:ADJ
+AdjP[Number=@ L=@] ::= RP[Number=@ L=care,ce]
 AdjP[CGNL=@] ::= VP[CGNL=@ VerbForm=Part]
-AdjP[CGNL=@] ::= AdvP AdjP[CGNL=@]
-AdjP[CGN=@ L=@] ::= AdjP[CGN=@] AdjPConj[CGNL=@]
-AdjPConj[CGN=@ L=@] ::= CCONJ[L=@] AdjP[CGN=@] 
+AdjP ::= AdvP h:AdjP # foarte mare
+AdjP[CGN=@ L=@] ::= AdjP[CGNL=@] AdjPConj[CGN=@]
+AdjPConj ::= CCONJ h:AdjP[CGN=@] 
 """
 
 noun_cfg = """
-N0[CGNPL=@ det=T Person=3] ::= DetP[CGN=@] N0[CGNL=@ det=F]
-N0[CGNPL=@] ::= PRON[CGNPL=@ PronType!=Rel]
-N0[CGNPL=@] ::= PROPN[CGNPL=@]
-N0[CGNL=@ Person=3] ::= NOUN[CGNL=@]
-N0[CGNL=@ Person=3] ::= AdjP[CGN=@] NOUN[CGNL=@]
-N0[CGNL=@ Person=3] ::= NOUN[CGNL=@] QP
+N0[det=T Person=3 CGN=@] ::= det:DetP[CGN=@] h:N0[CGN=@ det=F]
+N0 ::= h:PRON[PronType!=Rel Strength!=Weak]
+N0[Person=3] ::= h:PROPN
+N0[Person=3] ::= h:NOUN
+N0[Person=3 det=F CGN=@] ::= AdjP[CGN=@] h:N0[CGN=@]
+N0 ::= h:N0 id:QP[CGN=@]
 
 
-NP[CGNPL=@] ::= N0[CGNPL=@]
-NP[CGNPL=@] ::= NP[CGNPL=@] AdjP[CGN=@]
-%reverse
-NP[CGNPL=@] ::= NP[CGNPL=@] poss:NP[Case==Gen]
-%reverse
-NP[CGNPL=@] ::= NP[CGNPL=@] PP
-NP[CGNPL=@] ::= NP[CGNPL=@] appos:NP[Case=Nom Number=@]
+NP ::= h:N0
+NP[CGN=@] ::= h:NP[CGN=@] AdjP[CGN=@]
+NP ::= h:NP poss:NP[Case==Gen]
+NP ::= h:NP PP
+NP ::= h:NP appos:NP[Case=Nom]
 """
 
 adv_cfg = """
-AdvP[L=@] ::= ADV[L=@]
-AdvP[L=@] ::= ADP AdvP[L=@] # pe sus, de departe
+AdvP ::= h:ADV
+AdvP ::= PREP h:AdvP # pe sus, de departe
 """
 
 pp_cfg = """
-PREP[Case=@] ::= ADP[Case=@]
+PREP ::= h:ADP
 PREP[Case=@] ::= PREP ADP[Case=@]
-PP ::= PREP[Case=@] NP[Case=@]
-PP ::= PREP VP[VerbForm=Inf]    # pentru a scapa
+PP ::= h:PREP[Case=@] NP[Case=@]
+PP ::= h:PREP VP[VerbForm=Inf]    # pentru a scapa
 """
 
 cfg_list = [nom_aliases, det_cfg, num_cfg, adj_cfg, noun_cfg, adv_cfg, pp_cfg]

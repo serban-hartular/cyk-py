@@ -15,10 +15,10 @@ import rom_cfg_verb
 
 # grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 grammar_rules = """
-%%alias VerbForm,Mood,Tense,Person,Number,lemma VMTPNL
-%%alias Mood,Tense,Person,Number,lemma MTPNL
-
-V0[VerbForm=Gaa Person=@] ::= h:VERB[VerbForm=Fin,Ger] PRON[Person=@]
+VP ::= h:VERB
+VP ::= NP[Case=Nom Person=@ Number=@] VP[Person=@ Number=@]
+NP[Person=3] ::= h:NOUN
+NP ::= h:PRON
 """
 
 grammar = load_grammar(grammar_rules)
@@ -31,5 +31,5 @@ def parse(text : str, _parser : Parser = parser):
         print(e)
         return False
     _parser.parse(sq_list)
-    return _parser.get_parses()[0]
+    return _parser.get_parses()
 

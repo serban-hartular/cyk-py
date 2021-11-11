@@ -61,9 +61,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 			console.log('Error, unknown node id ' + id)
 		}
 		clicked_data = new Map<string, string>()
-		console.log(clicked.data)
 		for(let entry in clicked.data) {
-			console.log(entry)
 			let key = entry
 			let data_array : any = clicked.data[key]
 			let data = data_array.join(',')

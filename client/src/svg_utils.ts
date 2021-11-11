@@ -62,7 +62,8 @@ export class SvgMap extends Map<string, SvgNode>{
     height : number = 300
     lines : Array<Line> = new Array<Line>()
     root_id : string
-    static line_offset_y = 3
+    static top_offset_y = 2
+    static bottom_offset_y = 5
     static width_padding = 5
     width_array : Array<number>
     x_array : Array<number>
@@ -106,10 +107,11 @@ export class SvgMap extends Map<string, SvgNode>{
             for(let i = 0; i < parent.children.length; i++) {
                 let child_id = parent.children[i]
                 let deprel = parent.children_deprels[i]
+                if(deprel == 'h') deprel = '' //don't display head
                 let child = this.get(child_id)
                 let line = new Line(parent.id, child_id,
-                    parent.mid_x, parent.y + SvgMap.line_offset_y,
-                    child.mid_x, child.top_y - SvgMap.line_offset_y, deprel)
+                    parent.mid_x, parent.y + SvgMap.top_offset_y,
+                    child.mid_x, child.top_y - SvgMap.bottom_offset_y, deprel)
                 this.lines.push(line)
             }
         }
