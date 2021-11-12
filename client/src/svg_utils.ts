@@ -61,35 +61,36 @@ export class SvgMap extends Map<string, SvgNode>{
     width : number = 300
     height : number = 300
     lines : Array<Line> = new Array<Line>()
-    root_id : string
+    root_list : Array<string>
     static top_offset_y = 2
     static bottom_offset_y = 5
     static width_padding = 5
     width_array : Array<number>
     x_array : Array<number>
 
-    constructor(tree_library : TreeLibrary, root_id : string) {
+    constructor(tree_library : TreeLibrary, root_list : Array<string>) {
         super()
-        this.root_id = root_id
-        // let ids = [root_id].concat(tree_library.getDescendants(root_id))
-        // for(let id of ids) {
-        for(let id of tree_library.traverse(root_id)) {
-            let tree = tree_library.get(id)
-            let node = new SvgNode(id, tree.type, tree.children_ids, tree.children_deprels)
-            let [row, col] = tree_library.position_map.get(id)
-            node.row = row
-            node.col = col
-            this.set(id, node)
-            if(tree.children_ids.length == 0) { //this is a leaf
-                //add a word node
-                let word = new SvgNode('w'+id, tree.form, [], [])
-                word.row = node.row + 1
-                word.col = node.col
-                node.children = [word.id]
-                this.set(word.id, word)
+        console.log('SvgMap constructor')
+        this.root_list = root_list
+        for(let root_id of this.root_list) {
+            for(let id of tree_library.traverse(root_id)) {
+                let tree = tree_library.get(id)
+                let node = new SvgNode(id, tree.type, tree.children_ids, tree.children_deprels)
+                let [row, col] = tree_library.position_map.get(id)
+                node.row = row
+                node.col = col
+                this.set(id, node)
+                if(tree.children_ids.length == 0) { //this is a leaf
+                    //add a word node
+                    let word = new SvgNode('w'+id, tree.form, [], [])
+                    word.row = node.row + 1
+                    word.col = node.col
+                    node.children = [word.id]
+                    this.set(word.id, word)
+                }
             }
+            this.setFirstCoordinates(root_id)
         }
-        this.setFirstCoordinates(root_id)
         this.generateLines()
     }
     setFirstCoordinates(id : string, depth : number = 0) {
@@ -140,19 +141,21 @@ export class SvgMap extends Map<string, SvgNode>{
         this.setMidpoints()
         this.generateLines()
     }
-    setMidpoints(id : string = this.root_id) {
-        let node = this.get(id)
-        node.calcTopBottom()
-        if(node.children.length == 0) {
-            node.setMidX(this.x_array[node.col] + this.width_array[node.col] / 2)
-            return
+    setMidpoints(ids : Array<string> = this.root_list) {
+        for(let id of ids) {
+            let node = this.get(id)
+            node.calcTopBottom()
+            if(node.children.length == 0) {
+                node.setMidX(this.x_array[node.col] + this.width_array[node.col] / 2)
+                return
+            }
+            let midpoint_sum = 0
+            for(let child_id of node.children) {
+                this.setMidpoints([child_id])
+                midpoint_sum += this.get(child_id).mid_x
+            }
+            node.setMidX(midpoint_sum / node.children.length)
         }
-        let midpoint_sum = 0
-        for(let child_id of node.children) {
-            this.setMidpoints(child_id)
-            midpoint_sum += this.get(child_id).mid_x
-        }
-        node.setMidX(midpoint_sum / node.children.length)
     }
 }
 

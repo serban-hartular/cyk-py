@@ -17,15 +17,15 @@ AUXP ::= h:AUXP ADV        # am tot cam mai venit
 # perfectul compus
 V0[VerbForm=Fin Mood=Ind Tense=Perf Comp=T PNL=@] ::= AUXP[lemma=avea PN=@] VERB[VerbForm=Part Gender=Masc Number=Sing lemma=@] 
 #conditionalul
-V0[VerbForm=Fin Mood=Cond Tense=Pres Comp=T] ::= AUXP[lemma=avea PN=@] h:VERB[VerbForm=Inf]
+V0[VerbForm=Fin Mood=Cond Tense=Pres Comp=T PN=@] ::= AUXP[lemma=avea PN=@] h:VERB[VerbForm=Inf]
 FI_PART ::= AUX[lemma=fi Tense=Pres VerbForm=Inf] h:VERB[VerbForm=Part Gender=Masc Number=Sing]
 V0[VerbForm=Fin Mood=Cond Tense=Perf PN=@ Comp=T] ::= AUXP[lemma=avea PN=@] h:FI_PART
 #subjonctivul
 SPART ::= h:PART[Mood=Sub lemma=să]
 SPART ::= h:SPART ADV # să tot vină
-V0[VerbForm=Fin Mood=Subj Tense=Pres] ::= SPART h:V0[VerbForm=Fin Mood=Subj Tense=Pres Pers=3]
-V0[VerbForm=Fin Mood=Subj Tense=Pres] ::= SPART h:V0[VerbForm=Fin Mood=Subj,Ind Tense=Pres Pers=1,2]
-V0[VerbForm=Fin Mood=Subj Tense=Perf] ::= SPART h:FI_PART[lemma=@]
+V0[VerbForm=Fin Mood=Sub Tense=Pres] ::= SPART h:V0[VerbForm=Fin Mood=Sub Tense=Pres Pers=3]
+V0[VerbForm=Fin Mood=Sub Tense=Pres] ::= SPART h:V0[VerbForm=Fin Mood=Sub,Ind Tense=Pres Pers=1,2]
+V0[VerbForm=Fin Mood=Sub Tense=Perf] ::= SPART h:FI_PART[lemma=@]
 """
 
 clitics_cfg = """
@@ -35,9 +35,9 @@ ICLT ::= h:PRON[PronType=Prs Strength=Weak Case=Dat]
 V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=@3] ::= dclt:DCLT[Person=@1 Number=@2 Gender=@3] h:V0[Dclt=F Iclt=F VerbForm=Fin Comp=F]
 V0[Iclt=T IcltP=@1 IcltN=@2 IcltG=@3] ::= iclt:ICLT[Person=@1 Number=@2 Gender=@3] h:V0[Iclt=F VerbForm=Fin Comp=F]
 # perfect composite
-V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=Masc] ::= dclt:DCLT[Person=@1 Number=@2 Gender=Masc] h:V0[VerbForm=Fin Comp=T Dclt=F Iclt=F]
-V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=Fem] ::= h:V0[VerbForm=Fin Comp=T Dclt=F] dclt:DCLT[Person=@1 Number=@2 Gender=Fem]
-V0[Iclt=T IcltP=@1 IcltN=@2 IcltG=@3] ::= iclt:ICLT[Person=@1 Number=@2 Gender=@3] h:V0[VerbForm=Fin Comp=T Iclt=F]
+V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=Masc] ::= dclt:DCLT[Person=@1 Number=@2 Gender=Masc] h:V0[VerbForm=Fin Comp==T Dclt=F Iclt=F]
+V0[Dclt=T DcltP=@1 DcltN=@2 DcltG=Fem] ::= h:V0[VerbForm=Fin Comp==T Dclt=F] dclt:DCLT[Person=@1 Number=@2 Gender=Fem]
+V0[Iclt=T IcltP=@1 IcltN=@2 IcltG=@3] ::= iclt:ICLT[Person=@1 Number=@2 Gender=@3] h:V0[VerbForm=Fin Comp==T Iclt=F]
 """
 
 

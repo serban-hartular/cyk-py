@@ -57,8 +57,15 @@ def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.Pars
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) -> List[cyk_parser.ParseSquare]:
     # words = text.split()
-    words = re.split(r'[ \t,\.\-;:\\?!@#$%^&]', text)
-    words = [w for w in words if w]
+    split = re.split(r'[ \t,\.;:\\?!@#$%^&]', text)
+    # words = split
+    words = []
+    for atom in split:
+        if not atom: continue
+        if '-' in atom:
+            words += separate_dashed_word(atom, word_dict)
+        else:
+            words.append(atom)
     sq_list = []
     for word in words:
         sq = word_2_parse_square(word)
@@ -67,3 +74,17 @@ def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict
         sq_list.append(sq)
     return sq_list
 
+def separate_dashed_word(word : str, word_dict = ud_word_dict) -> List[str]:
+    atoms = re.split('(-)', word)
+    final_list = []
+    while len(atoms) > 1:
+        candidate = atoms[0] + atoms[1]
+        if candidate in word_dict:
+            final_list.append(candidate)
+            atoms = atoms[2:]
+        else:
+            final_list.append(atoms[0])
+            atoms = atoms[1:]
+    if atoms:
+        final_list.append(atoms[0])
+    return final_list

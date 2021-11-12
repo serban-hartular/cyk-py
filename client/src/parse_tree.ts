@@ -31,11 +31,13 @@ export class TreeLibrary {
     tree_map : Map<string, Node>
     position_map : Map<string, [number, number]>
     parse_table : Array<Array<Array<string>>>
-    selected : string = undefined
-    selected_children = new Array<string>()
-    selected_descendants = new Array<string>()
+    root_list : Array<Array<string>>
+    roots : Array<string>
+    // selected : string = undefined
+    // selected_children = new Array<string>()
+    // selected_descendants = new Array<string>()
 
-    constructor(tree_list : any, json_parse_table : any) {
+    constructor(tree_list : any, json_parse_table : any, root_list : any) {
         this.tree_map = new Map<string, Node>()
         for(let tree of tree_list) {
             this.tree_map.set(String(tree.id), new Node(tree))
@@ -64,7 +66,14 @@ export class TreeLibrary {
                 }
             }
         }
-        this.setSelected(this.parse_table[0][0][0])
+        //root list
+        this.root_list = new Array<Array<string>>()
+        for(let root of root_list) {
+            this.root_list.push(root.map(x => String(x)))
+        }
+        
+        // this.setSelected(this.root_list[0][0])
+        // console.log(this.selected)
     }
 
     get(id : string) {
@@ -79,16 +88,17 @@ export class TreeLibrary {
         return this.children(parent_id).includes(child_id)
     }
 
-    setSelected(id : string) {
-        this.selected = id
-        if(id == undefined) return
-        let tree = this.tree_map.get(id)
-        if(!tree) return
-        this.selected_children = tree.children_ids
-        this.selected_descendants = new Array<string>()
-        for(let child_id of this.selected_children)
-            this.selected_descendants = this.selected_descendants.concat(this.getDescendants(child_id))
-    }
+    // setSelected(id : string) {
+    //     this.selected = id
+    //     if(id == undefined) return
+    //     this.roots = [this.selected]
+    //     let tree = this.tree_map.get(id)
+    //     if(!tree) return
+    //     this.selected_children = tree.children_ids
+    //     this.selected_descendants = new Array<string>()
+    //     for(let child_id of this.selected_children)
+    //         this.selected_descendants = this.selected_descendants.concat(this.getDescendants(child_id))
+    // }
     getDescendants(id : string) : Array<string> {
         let ids = []
         for(let child_id of this.children(id)) {
@@ -98,10 +108,10 @@ export class TreeLibrary {
         return ids
     }
 
-    isSelectedOrDescendant(id : string) : boolean {
-        return id == this.selected || this.selected_children.includes(id) 
-            || this.selected_descendants.includes(id)
-    }
+    // isSelectedOrDescendant(id : string) : boolean {
+    //     return id == this.selected || this.selected_children.includes(id) 
+    //         || this.selected_descendants.includes(id)
+    // }
 
     *traverse(id : string) {
         yield id

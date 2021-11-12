@@ -32,7 +32,7 @@ import SvgTree from "./SvgTree.svelte";
 		.catch(reason => response = reason)
 		// console.log(JSON.stringify(response))
 		if(!response.error_msg) {
-			tree_library = new TreeLibrary(response.data.nodes, response.data.table)
+			tree_library = new TreeLibrary(response.data.nodes, response.data.table, response.data.root_list)
 			message = 'Parse OK'
 		} else {
 			message = response.error_msg
@@ -43,8 +43,6 @@ import SvgTree from "./SvgTree.svelte";
 	function onDivClick() {
 
 	}
-	let selected;
-	$: selected = tree_library ? tree_library.selected : -1
 </script>
 
 <main>
@@ -57,8 +55,8 @@ import SvgTree from "./SvgTree.svelte";
 	</form>
 	<p>{message}</p>
 
-	{#if tree_library && tree_library.selected != undefined }
-		<SvgTree bind:tree_library={tree_library} bind:root_id={tree_library.selected} />
+	{#if tree_library }
+		<SvgTree bind:tree_library={tree_library} />
 	{/if}
 
 	{#if tree_library}

@@ -5,27 +5,47 @@ import type { TreeLibrary, Node } from "./parse_tree";
 import  SvgNode, { SvgMap, Line } from "./svg_utils"
 
     export let tree_library : TreeLibrary
-	export let root_id : string
+	let roots = tree_library.root_list[0] 
+	console.log('roots = ' + roots)
 
-	let node_map : SvgMap = new SvgMap(tree_library, root_id)//SvgNode.generateTree(tree_library, root_id)
+	let node_map : SvgMap = new SvgMap(tree_library, roots)
 	let node_array : Array<SvgNode>
 	let line_array : Array<Line>
+		node_array = Array.from(node_map.values())
+		line_array = node_map.lines
+		onNodeClick(roots[0])
 
 	let clicked : Node = null
 	let clicked_data : Map<string, string> = null
 
+	$: { //for new parse
+		tree_library;
+		console.log('tree_library')
+	}
+
 	$: {
-		if(root_id != node_map.root_id) {
-			node_map  = new SvgMap(tree_library, root_id)
-			//console.log('new node_map !')
-		}
+		node_map;
+		console.log('node_map')
 	}
-	$:{
-		// node_map;
-		node_array = Array.from(node_map.values())
-		line_array = node_map.lines
-		//console.log('node_map changed!')
-	}
+
+	// $: {
+	// 	roots; 
+		// console.log('if roots...')
+		// if(roots != node_map.root_list) {
+			// console.log('roots -- new node map')
+			// node_map  = new SvgMap(tree_library, roots)
+			// node_array = Array.from(node_map.values())
+			// line_array = node_map.lines
+			// console.log('roots -- done')
+			//node_map = node_map
+			// }
+	// }
+
+	// $:{
+	// 	console.log('node_array')
+	// 	node_array = Array.from(node_map.values())
+	// 	line_array = node_map.lines
+	// }
 
 	function updateCoordinates() {
 		for(let node of node_map.values()) {
@@ -37,25 +57,25 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 		node_map.updateCoordinates()
 	}
 
-	// onMount(() => {
-	// 	// for(let line of line_array) {
-	// 	// 	line.x1 += 10
-	// 	// }
-	// 	//console.log('doing onMount')
-	// 	updateCoordinates()
-	// 	node_map = node_map
-	// })
+	onMount(() => {
+		console.log('onmount')
+		updateCoordinates()
+		node_map = node_map;
+	})
 
 	afterUpdate(() => {
-		//console.log('doing afterUpdate')
+		console.log('afterupdate')
 		updateCoordinates()
-		node_map = node_map
-		//console.log(line_array)
+		node_map = node_map;
+		node_array = node_array
+		line_array = node_map.lines
 	})
 
 	function onNodeClick(id : string) {
+		console.log('click ' + id)
 		if(id.startsWith('w')) id = id.substring(1)
-		clicked = tree_library.get(id)
+			clicked = tree_library.get(id)
+		// node_map = node_map //this triggers everything
 		if(clicked == undefined) {
 			clicked = null
 			console.log('Error, unknown node id ' + id)
@@ -70,12 +90,36 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 			}
 		}
 	}
-// 	console.log(text1.getComputedTextLength())
+
+	function root_to_str_rep(root : Array<string>) : string {
+		let types : string = root.map(id => tree_library.get(id).type).join(',')
+		return types
+	}
+
+	function onParseClick(new_roots : Array<string>) {
+		console.log('roots -- new node map')
+		node_map  = new SvgMap(tree_library, new_roots)
+		node_array = Array.from(node_map.values())
+		line_array = node_map.lines
+		console.log('roots -- done')
+		onNodeClick(new_roots[0])
+	}
 
 
 </script>
 
 <table>
+	<tr><td colspan="2">
+		<!-- Table of possible parses -->
+		Possible parses:
+		<table><tr>
+			{#each tree_library.root_list as root}
+				<td on:click={()=>onParseClick(root)}>
+					{root_to_str_rep(root)}
+				</td>
+			{/each}
+		</tr></table>
+	</td></tr>
 	<tr><td>
 {#if node_map}
 <svg height={node_map.height} width={node_map.width}>

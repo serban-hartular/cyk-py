@@ -13,13 +13,13 @@ import rom_cfg_verb
 # NP[CGN=@ DQ=T] ::= DET[CGN=@] NP[CGN=@ DQ=F] 
 # """
 
-# grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
-grammar_rules = """
-VP ::= h:VERB
-VP ::= NP[Case=Nom Person=@ Number=@] VP[Person=@ Number=@]
-NP[Person=3] ::= h:NOUN
-NP ::= h:PRON
-"""
+grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
+# grammar_rules = """
+# VP ::= h:VERB
+# VP ::= NP[Case=Nom Person=@ Number=@] VP[Person=@ Number=@]
+# NP[Person=3] ::= h:NOUN
+# NP ::= h:PRON
+# """
 
 grammar = load_grammar(grammar_rules)
 parser = Parser(grammar)

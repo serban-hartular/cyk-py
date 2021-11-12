@@ -3,11 +3,6 @@ from rule import Rule, NodeData
 from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
 from typing import List, Dict, Tuple
 
-
-# FORM_STR = rule.FORM_STR
-from rvalues import RValues
-
-
 class Grammar:
     def __init__(self, rules : List[Rule]):
         self.rules = rules
@@ -24,8 +19,13 @@ class Grammar:
     def assign_scores(self):
         for nonterm in self.nonterminals:
             rules = [rule for rule in self.rules if rule.parent.constraints[TYPE_STR].values.get() == nonterm]
-            for n in range(0, len(rules)):
-                rules[n].score = 1 / (n+1)
+            n = 0
+            for rule in rules:
+                if len(rule.children) == 1: # this is kind of doubtful
+                    rule.score = 1.00001
+                    continue
+                rule.score = 1 / (n+1)
+                n += 1
 
 class Tree:
     def __init__(self, data : NodeData, rule : Rule = None, children : List['Tree'] = None, children_annot : List[Dict] = None):
@@ -174,34 +174,31 @@ class Parser:
                     if not prune_similar or (prune_similar and not similar): # to ommit if similar
                         square.append(new_node)        
 
-    def get_parses(self, position : tuple = None) -> List[Tree]:
+    def get_parses(self, position : tuple = None) -> List[List[Tree]]:
         (row, col) = position if position else (len(self.table)-1, 0)
         if self.table[row][col]: # done!
-            return self.table[row][col]
+            return [[p] for p in self.table[row][col]]
         # try children positions
-        dummy_nodes = []
+        parses = []
         for possible_children in Parser.generate_child_squares(row, col):
             (childpos1, childpos2) = possible_children
             parses1 = self.get_parses(childpos1)
             parses2 = self.get_parses(childpos2)
-            print(parses1)
-            print(parses2)
             for child1 in parses1:
                 for child2 in parses2:
-                    dummy = Tree(NodeData({TYPE_STR: RValues({'DUMMY'})}), None, [child1, child2])
-                    dummy_nodes.append(dummy)
-        dummy_nodes.sort(key=lambda n : -n.score)
-        return dummy_nodes
+                    parses.append(child1 + child2)
+        parses.sort(key=lambda n : len(n))
+        return parses
     def to_jsonable(self):
         tree_list = []
         N = len(self.table)
-        table = list()  # array that holds the rows        
+        json_table = list()  # array that holds the rows        
         for row_index in range(0, N):  # create row
             row = [list() for col in range(row_index, len(self.table))]
-            table.append(row)
+            json_table.append(row)
             for col_index in range(0, len(row)):
                 for tree in self.table[row_index][col_index]:
-                    table[row_index][col_index].append(len(tree_list)) #this will be the tree ID
+                    json_table[row_index][col_index].append(len(tree_list)) #this will be the tree ID
                     tree_list.append(tree)  # tree ID is index of tree in list
         tree_json_list = []
         for i in range(0, len(tree_list)):
@@ -209,5 +206,9 @@ class Parser:
             tree_json['id'] = i
             tree_json['children'] = [tree_list.index(child) for child in tree_list[i].children]
             tree_json_list.append(tree_json)
-        return {'nodes':tree_json_list, 'table':table}
+        parses = self.get_parses()
+        root_list = []
+        for parse in parses:
+            root_list.append([tree_list.index(i) for i in parse])
+        return {'nodes':tree_json_list, 'table':json_table, 'root_list':root_list}
             

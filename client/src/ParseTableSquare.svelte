@@ -5,24 +5,18 @@ import type { TreeLibrary } from "./parse_tree";
 export let tree_library : TreeLibrary
 export let id_list : Array<string>
 
-    function setSelected(id : string) {
-        tree_library.setSelected(id)
-        tree_library = tree_library //trigger
-        // console.log(id)
-    }
-
     function classFromId(id: string) {
-        if(id == tree_library.selected)
-            return 'selected'
-        if(tree_library.selected_children.includes(id))
-            return 'child'
-        if(tree_library.selected_descendants.includes(id))
-            return 'descendant'
+        // if(id == tree_library.selected)
+        //     return 'selected'
+        // if(tree_library.selected_children.includes(id))
+        //     return 'child'
+        // if(tree_library.selected_descendants.includes(id))
+        //     return 'descendant'
         return 'default'
     }
 
     function score2string(score : number): string {
-        return score.toFixed(2)
+        return Math.log10(score).toFixed(2)
     }
 
     let selected : string = ""
@@ -30,7 +24,7 @@ export let id_list : Array<string>
     let ordered_display = new Array<string>()
 
 $:{ tree_library;
-    to_display = id_list.filter(id => tree_library.isSelectedOrDescendant(id))
+    to_display = id_list.filter(id => true) //tree_library.isSelectedOrDescendant(id))
     ordered_display = new Array<string>()
     if(to_display.length > 0) {
         //fill in ordered_display, parent first, child next, grandkid next, etc
@@ -54,18 +48,16 @@ $:{ tree_library;
                 }
             }
             if(no_child_found) {
-                console.log('Error arranging list ' + String(to_display))
+                // console.log('Error arranging list ' + String(to_display))
                 break
             }
         }
     }
-    // console.log(to_display, ordered_display)
-    if(selected != tree_library.selected) selected = ""
 }
 
 </script>
 
-<select bind:value={selected} on:change="{() => setSelected(selected)}" required>
+<select bind:value={selected} on:change="{() => selected = selected}" required>
         <option value="" selected disabled hidden>nodes</option>
     {#each id_list as id}
         <option value={id}>{tree_library.get(id).type} ({score2string(tree_library.get(id).score)})</option>
@@ -73,7 +65,7 @@ $:{ tree_library;
 </select>
 
 {#each ordered_display as id}
-<p class={classFromId(id)} on:click={() => setSelected(id)}>
+<p class={classFromId(id)} on:click={() => selected = id}>
     {tree_library.get(id).type}
     {#if tree_library.children(id).length == 0}
         <br/>{tree_library.get(id).form}
