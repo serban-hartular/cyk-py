@@ -4,9 +4,10 @@ import ParseTable from "./ParseTable.svelte";
 import  { TreeLibrary } from "./parse_tree";
 import SvgTree from "./SvgTree.svelte";
 
-	export let sentence: string
+	let sentence: string
 	let message: string = ''
 	let tree_library : TreeLibrary
+	let parse_root : Array<string> = null
 
 	function request(text: string) :Promise<Object> {
 		return fetch('./parse', {
@@ -56,11 +57,11 @@ import SvgTree from "./SvgTree.svelte";
 	<p>{message}</p>
 
 	{#if tree_library }
-		<SvgTree bind:tree_library={tree_library} />
+		<SvgTree tree_library={tree_library} bind:parse_root={parse_root} />
 	{/if}
 
 	{#if tree_library}
-		<ParseTable bind:tree_library={tree_library} />
+		<ParseTable bind:tree_library={tree_library} bind:parse_root={parse_root} />
 	{/if}
 
 

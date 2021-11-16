@@ -21,8 +21,10 @@ grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # NP ::= h:PRON
 # """
 
+import faster_parsers
+
 grammar = load_grammar(grammar_rules)
-parser = Parser(grammar)
+parser = Parser(grammar) #faster_parsers.PoolParser(grammar)
 
 def parse(text : str, _parser : Parser = parser):
     try:

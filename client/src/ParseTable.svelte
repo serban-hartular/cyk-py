@@ -1,17 +1,19 @@
 <script lang="ts">
 
 	import type { TreeLibrary } from "./parse_tree";
-	export let tree_library : TreeLibrary
 	import Square from "./ParseTableSquare.svelte";
+
+	export let tree_library : TreeLibrary
+	export let parse_root : Array<string>
 
 </script>
 
-	<table >
+	<table style="max-width: 1000px;">
 		{#each tree_library.parse_table as row}
 		<tr>
 			{#each row as square}
 			<td>
-				<Square bind:tree_library={tree_library} bind:id_list={square} />
+				<Square bind:tree_library={tree_library} bind:id_list={square} bind:parse_root={parse_root}/>
 			</td>
 			{/each}
 		</tr>

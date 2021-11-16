@@ -1,51 +1,51 @@
 <script lang="ts">
 import { afterUpdate, onMount } from 'svelte';
-import { listen_dev } from 'svelte/internal';
+import { root_to_str_rep, score2string } from './common_utils';
 import type { TreeLibrary, Node } from "./parse_tree";
 import  SvgNode, { SvgMap, Line } from "./svg_utils"
 
     export let tree_library : TreeLibrary
-	let roots = tree_library.root_list[0] 
-	console.log('roots = ' + roots)
-
-	let node_map : SvgMap = new SvgMap(tree_library, roots)
-	let node_array : Array<SvgNode>
-	let line_array : Array<Line>
-		node_array = Array.from(node_map.values())
-		line_array = node_map.lines
-		onNodeClick(roots[0])
-
-	let clicked : Node = null
+	export let parse_root : Array<string>
+	let parse_list : Array<Array<string>> = tree_library.root_list
+	parse_root = parse_list[0]
+	let node_map : SvgMap = new SvgMap(tree_library, parse_root)
+	let node_list : Array<SvgNode> = node_map.getNodes()
+	let line_list : Array<Line> = node_map.getLines()
+	let clicked_id : string = null
 	let clicked_data : Map<string, string> = null
+	onNodeClick(parse_root[0])
 
-	$: { //for new parse
-		tree_library;
-		console.log('tree_library')
+	let tree_library_ref = tree_library
+
+
+	$: { 	tree_library;
+			if(tree_library == tree_library_ref) {
+				// console.log('Dummy tree_library change')
+			} else {
+				// console.log('parse_list <- tree_library')
+				parse_list = tree_library.root_list
+				parse_root = parse_list[0]
+				tree_library_ref = tree_library
+		}
 	}
 
 	$: {
-		node_map;
-		console.log('node_map')
+		if(node_map.root_list == parse_root) {
+//			console.log('Dummy node map change')
+		} else {
+//			console.log('node_map <-  parse')
+			node_map = new SvgMap(tree_library, parse_root)
+			onNodeClick(parse_root[0])
+		}	
 	}
 
-	// $: {
-	// 	roots; 
-		// console.log('if roots...')
-		// if(roots != node_map.root_list) {
-			// console.log('roots -- new node map')
-			// node_map  = new SvgMap(tree_library, roots)
-			// node_array = Array.from(node_map.values())
-			// line_array = node_map.lines
-			// console.log('roots -- done')
-			//node_map = node_map
-			// }
-	// }
+	$: {
+//		console.log('node_map change')
+		line_list = node_map.getLines()
+		node_list = node_map.getNodes()
 
-	// $:{
-	// 	console.log('node_array')
-	// 	node_array = Array.from(node_map.values())
-	// 	line_array = node_map.lines
-	// }
+	}
+
 
 	function updateCoordinates() {
 		for(let node of node_map.values()) {
@@ -57,24 +57,23 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 		node_map.updateCoordinates()
 	}
 
-	onMount(() => {
-		console.log('onmount')
-		updateCoordinates()
-		node_map = node_map;
-	})
+	// onMount(() => {
+	// 	console.log('onmount')
+	// 	updateCoordinates()
+	// 	node_map = node_map;
+	// })
 
 	afterUpdate(() => {
-		console.log('afterupdate')
+		// console.log('afterUpdate')
 		updateCoordinates()
-		node_map = node_map;
-		node_array = node_array
-		line_array = node_map.lines
+		line_list = line_list
+		node_list = node_list
 	})
 
 	function onNodeClick(id : string) {
-		console.log('click ' + id)
 		if(id.startsWith('w')) id = id.substring(1)
-			clicked = tree_library.get(id)
+		clicked_id = id
+		let clicked = tree_library.get(id)
 		// node_map = node_map //this triggers everything
 		if(clicked == undefined) {
 			clicked = null
@@ -85,48 +84,55 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 			let key = entry
 			let data_array : any = clicked.data[key]
 			let data = data_array.join(',')
-			if(key != 'type' && key != 'form') {
-				clicked_data.set(key, data)
-			}
+			//if(key != 'type' && key != 'form') {
+			clicked_data.set(key, data)
+			//}
 		}
 	}
 
-	function root_to_str_rep(root : Array<string>) : string {
-		let types : string = root.map(id => tree_library.get(id).type).join(',')
-		return types
-	}
 
 	function onParseClick(new_roots : Array<string>) {
-		console.log('roots -- new node map')
-		node_map  = new SvgMap(tree_library, new_roots)
-		node_array = Array.from(node_map.values())
-		line_array = node_map.lines
-		console.log('roots -- done')
-		onNodeClick(new_roots[0])
+		parse_root = new_roots
 	}
 
+	function rule2string(id : string) {
+		let rule = tree_library.get(id).rule
+		if(rule.length < 24) {
+			rule = rule.replaceAll('\t', ' ')
+		} else {
+			rule = rule.replaceAll('\t', '\n\t')
+		}
+		return rule
+	}
 
 </script>
 
-<table>
-	<tr><td colspan="2">
+{#if parse_list}
 		<!-- Table of possible parses -->
 		Possible parses:
 		<table><tr>
-			{#each tree_library.root_list as root}
+			{#each parse_list as root}
 				<td on:click={()=>onParseClick(root)}>
-					{root_to_str_rep(root)}
+					{#if root == parse_root}
+						<b>{root_to_str_rep(root, tree_library)}</b>	
+					{:else}
+					{root_to_str_rep(root, tree_library)}
+					{/if}
+					<br>
+					({score2string(root, tree_library)})
 				</td>
 			{/each}
 		</tr></table>
-	</td></tr>
+{/if}
+<table>
 	<tr><td>
 {#if node_map}
 <svg height={node_map.height} width={node_map.width}>
-	{#each node_array as node}
-	    <text on:click={()=>onNodeClick(node.id)} class="node" id={node.id} x={node.x} y={node.y}>{node.text}</text>		
+	{#each node_list as node}
+	    <text on:click={()=>onNodeClick(node.id)} class={clicked_id == node.id ? "selected_node" : "node"} 
+			id={node.id} x={node.x} y={node.y}>{node.text}</text>		
 	{/each}
-	{#each line_array as line }
+	{#each line_list as line }
 		<line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="black" />
 		{#if line.deprel}
 			<text class="deprel" x={line.x2} y={(line.y1 + line.y2)/2}>{line.deprel}</text>
@@ -136,12 +142,14 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 {/if}
 </td>
 <td>
-{#if clicked}
-<b>{clicked.type}</b>: <i>"{clicked.form}"</i><br/>
+{#if clicked_id}
+<p><b>{tree_library.get(clicked_id).type}</b>: <i>"{tree_library.get(clicked_id).form}"</i><br/></p>
+<p style="column-count: {clicked_data.size > 5 ? 2 : 1}; width: fit-content;">
 {#each Array.from(clicked_data.keys()) as key}
 	{key}: {clicked_data.get(key)}<br/>
 {/each}
-Rule: "{clicked.rule}"
+</p>
+Rule: <pre>"{rule2string(clicked_id)}"</pre>
 {/if}
 </td></tr>
 </table>
@@ -152,6 +160,13 @@ Rule: "{clicked.rule}"
 			font-size: 1em;
 			font-style: normal;
 			user-select: none;
+	}
+	.selected_node {
+		font-family: Arial, Helvetica, sans-serif;
+			font-size: 1em;
+			font-style: normal;
+			user-select: none;
+			font-weight: bold;
 	}
 	.deprel {
 		font-family: "Times New Roman", Times, serif;

@@ -3,6 +3,7 @@ export class Node {
     id : string
     rule : string
     score : number
+    nscore : number
     type : string
     form : string
     children_ids : Array<string>
@@ -13,6 +14,7 @@ export class Node {
         this.id = String(json_node['id'])
         this.rule = json_node['rule']
         this.score = Number(json_node['score'])
+        this.nscore = Number(json_node['nscore'])
         this.type = json_node['type']
         this.form = json_node['form']
         this.children_ids = json_node['children'].map((n) => String(n))

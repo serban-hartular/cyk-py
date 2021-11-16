@@ -67,10 +67,9 @@ export class SvgMap extends Map<string, SvgNode>{
     static width_padding = 5
     width_array : Array<number>
     x_array : Array<number>
-
+  
     constructor(tree_library : TreeLibrary, root_list : Array<string>) {
         super()
-        console.log('SvgMap constructor')
         this.root_list = root_list
         for(let root_id of this.root_list) {
             for(let id of tree_library.traverse(root_id)) {
@@ -93,6 +92,14 @@ export class SvgMap extends Map<string, SvgNode>{
         }
         this.generateLines()
     }
+
+    getNodes() : Array<SvgNode> {
+        return Array.from(this.values())
+    }
+    getLines() : Array<Line> {
+        return this.lines
+    }
+
     setFirstCoordinates(id : string, depth : number = 0) {
         let svg_node = this.get(id)
         svg_node.row = depth;

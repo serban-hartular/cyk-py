@@ -140,7 +140,7 @@ class Rule:
         # print(parent_node)
         return parent_node, [child.annotation for child in self.children]
     def to_text(self):
-        return self.parent.to_text() + ' ::= ' + ' '.join([c.to_text() for c in self.children])
+        return self.parent.to_text() + ' ::=\t' + '\t'.join([c.to_text() for c in self.children])
     def __str__(self):
         return self.to_text()
     def __repr__(self):

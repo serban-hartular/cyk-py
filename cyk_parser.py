@@ -1,3 +1,4 @@
+import math
 
 from rule import Rule, NodeData
 from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
@@ -34,6 +35,8 @@ class Tree:
         self.children_annot = children_annot
         self.rule = rule
         self.score = 1
+        self.num_nodes = 1 + sum([child.num_nodes for child in self.children])
+        self.nscore = 0
         if not children:
             self.form = ' '.join([s for s in data[FORM_STR]]) if FORM_STR in data else ''
         else:
@@ -45,8 +48,10 @@ class Tree:
         self.score = self.rule.score if self.rule else 1
         for child in self.children:
             self.score *= child.score
+        self.nscore = math.log10(self.score) / self.num_nodes
+        
     def to_jsonable(self, add_children = False) -> dict:
-        str_attrs = ['type', 'form', 'score', 'rule']
+        str_attrs = ['type', 'form', 'score', 'nscore', 'rule']
         obj = {k:str(self.__getattribute__(k)) for k in str_attrs}
         obj['data'] = self.data.to_jsonable()
         if add_children:

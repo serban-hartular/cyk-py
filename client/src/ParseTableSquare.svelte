@@ -1,9 +1,12 @@
 <script lang="ts">
 import { get } from "svelte/store";
 import type { TreeLibrary } from "./parse_tree";
+import { score2string } from "./common_utils"
 
 export let tree_library : TreeLibrary
 export let id_list : Array<string>
+export let parse_root : Array<string>
+
 
     function classFromId(id: string) {
         // if(id == tree_library.selected)
@@ -15,9 +18,6 @@ export let id_list : Array<string>
         return 'default'
     }
 
-    function score2string(score : number): string {
-        return Math.log10(score).toFixed(2)
-    }
 
     let selected : string = ""
     let to_display = Array<string>()
@@ -57,24 +57,32 @@ $:{ tree_library;
 
 </script>
 
-<select bind:value={selected} on:change="{() => selected = selected}" required>
+<!-- <select bind:value={selected} on:change="{() => selected = selected}" required>
         <option value="" selected disabled hidden>nodes</option>
     {#each id_list as id}
-        <option value={id}>{tree_library.get(id).type} ({score2string(tree_library.get(id).score)})</option>
+        <option value={id}>{tree_library.get(id).type} ({score2string([id], tree_library)})</option>
     {/each}
-</select>
+</select> -->
 
-{#each ordered_display as id}
-<p class={classFromId(id)} on:click={() => selected = id}>
-    {tree_library.get(id).type}
-    {#if tree_library.children(id).length == 0}
-        <br/>{tree_library.get(id).form}
-    {/if}
-</p>
-{/each}
-
+{#if !id_list || id_list.length == 0}
+<br/>
+{:else}
+    {#each id_list as id}
+    <!-- <p class={classFromId(id)} on:click={() => selected = id}> -->
+        <span on:click={()=>parse_root=[id]}>
+        {#if parse_root && parse_root.includes(id)}
+        <b>{tree_library.get(id).type},</b>
+        {:else}
+        {tree_library.get(id).type} 
+        {/if}
+        </span>
+    <!-- </p> -->
+    {/each}
+{/if}
 <style>
-    p {
+    
+
+    /* p {
         user-select: none; 
         margin-top: 6px;
         margin-bottom: 6px;
@@ -97,5 +105,5 @@ $:{ tree_library;
     }
     .descendant {
         background-color: #E0E0FF;
-    }
+    } */
 </style>
