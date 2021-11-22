@@ -8,6 +8,7 @@ import SvgTree from "./SvgTree.svelte";
 	let message: string = ''
 	let tree_library : TreeLibrary
 	let parse_root : Array<string> = null
+	let guess_root : string = 'VP'
 
 	function request(text: string) :Promise<Object> {
 		return fetch('./parse', {
@@ -16,8 +17,10 @@ import SvgTree from "./SvgTree.svelte";
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    text: sentence})
+                    text: sentence,
+					guess : guess_root
 				})
+			})
 		.then((response) => response.json())
 		.then((data) => data as Object)
 	}
@@ -33,7 +36,8 @@ import SvgTree from "./SvgTree.svelte";
 		.catch(reason => response = reason)
 		// console.log(JSON.stringify(response))
 		if(!response.error_msg) {
-			tree_library = new TreeLibrary(response.data.nodes, response.data.table, response.data.root_list)
+			tree_library = new TreeLibrary(response.data.nodes, response.data.table,
+				response.data.root_list, response.data.guess_list)
 			message = 'Parse OK'
 		} else {
 			message = response.error_msg
@@ -46,12 +50,18 @@ import SvgTree from "./SvgTree.svelte";
 	}
 </script>
 
+<svelte:head>
+	<title>CYK Parser</title>
+	<html lang="en" />
+</svelte:head>
+
 <main>
 	<h3>Enter sentence:</h3>
 	<form on:submit|preventDefault={processInput}>
 		<input type="text" size="50" bind:value={sentence}><br/>
 		
-		<button type="submit">Parse</button>
+		<button type="submit">Parse</button><br/>
+		Guess: <input type="text" bind:value={guess_root}>
 		<!-- <button class="help" on:click={()=>getModal('parse_modal').open()}>?</button> -->
 	</form>
 	<p>{message}</p>

@@ -9,6 +9,7 @@ det_cfg = """
 DetP ::= h:DET
 DetP ::= h:QP
 DetP[CGN=@] ::= h:DET[CGN=@] h:QP[CGN=@]
+DetP ::= ADV[lemma=nici] h:DET[lemma=un]
 """
 
 num_cfg = """
@@ -26,15 +27,17 @@ AdjPConj ::= CCONJ h:AdjP[CGN=@]
 """
 
 noun_cfg = """
-N0[det=T Person=3 CGN=@] ::= det:DetP[CGN=@] h:N0[CGN=@ det=F]
-N0 ::= h:PRON[PronType!=Rel Strength!=Weak]
-N0[Person=3] ::= h:PROPN
 N0[Person=3] ::= h:NOUN
-N0[Person=3 det=F CGN=@] ::= AdjP[CGN=@] h:N0[CGN=@]
-N0 ::= h:N0 id:QP[CGN=@]
+N0[det=T Person=3 CGN=@] ::= det:DetP[CGN=@] h:N0[CGN=@ det=F Definite=Ind]  # un om; *un omul
+N0 ::= h:PRON[PronType=Prs,Ind,Dem,Neg Strength=Strong]     # eu, acesta, cineva, nimeni
+N0[Person=3] ::= h:PROPN                                    # Ion
+N0[CGN=@]       ::= AdjP[CGN=@ Definite=Ind] h:N0[CGN=@ det=F]        # frumos baiat
+N0[CGN=@ det=T] ::= AdjP[CGN=@ Definite=Def] h:N0[CGN=@ det=F]        # frumosul baiat
+N0 ::= h:N0 id:QP[CGN=@]                                    # etajul doi
 
 
 NP ::= h:N0
+NP[CGN=@] ::= NP[Definite=Def CGN=@] DET[PronType=Dem lemma=acesta,acela]
 NP[CGN=@] ::= h:NP[CGN=@] AdjP[CGN=@]
 NP ::= h:NP poss:NP[Case==Gen]
 POSS[PosG=@1 PosN=@2] ::= DET[lemma=al Gender=@1 Number=@2] poss:NP[Case==Gen]
@@ -56,7 +59,7 @@ AdvP ::= PREP h:AdvP # pe sus, de departe
 pp_cfg = """
 PREP ::= h:ADP
 PREP[Case=@] ::= PREP ADP[Case=@]
-PP ::= h:PREP[Case=@] NP[Case=@]
+PP ::= h:PREP[Case=@ Case=Acc,Gen,Dat] NP[Case=@]
 PP ::= h:PREP VP[VerbForm=Inf]    # pentru a scapa
 PP ::= h:ADV[lemma=ca,precum] NP
 """

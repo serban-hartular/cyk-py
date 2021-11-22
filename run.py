@@ -21,17 +21,24 @@ grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # NP ::= h:PRON
 # """
 
-import faster_parsers
 
-grammar = load_grammar(grammar_rules)
+with open('rom_cfg_0.1.cfg', 'r', encoding='utf8') as fptr:
+    grammar = load_grammar(fptr)
 parser = Parser(grammar) #faster_parsers.PoolParser(grammar)
 
 def parse(text : str, _parser : Parser = parser):
-    try:
-        sq_list = text_2_square_list(text)
-    except Exception as e:
-        print(e)
-        return False
+    sq_list, unknown = text_2_square_list(text)
+    if unknown:
+        print('Unkown: ' + ', '.join(unknown))
     _parser.parse(sq_list)
     return _parser.get_parses()
 
+if __name__ == '__main__':
+    from rule import *
+    from guess_tree import *
+    parse('un bou *** are fete')
+    # parser.cell(0, 1).clear()
+    vp = [r for r in grammar.doubletons if str(r).startswith('VP')]
+
+    s = guess_tree(parser, NodeData({TYPE_STR:'VP'}), add_guesses=True)
+    print(s)

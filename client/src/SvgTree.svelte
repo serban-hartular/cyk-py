@@ -8,6 +8,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 	export let parse_root : Array<string>
 	let parse_list : Array<Array<string>> = tree_library.root_list
 	parse_root = parse_list[0]
+	let guess_list = tree_library.guess_list
 	let node_map : SvgMap = new SvgMap(tree_library, parse_root)
 	let node_list : Array<SvgNode> = node_map.getNodes()
 	let line_list : Array<Line> = node_map.getLines()
@@ -25,6 +26,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 				// console.log('parse_list <- tree_library')
 				parse_list = tree_library.root_list
 				parse_root = parse_list[0]
+				guess_list = tree_library.guess_list
 				tree_library_ref = tree_library
 		}
 	}
@@ -105,6 +107,16 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 		return rule
 	}
 
+	function svgTextClass(id : string) : string {
+		id = id.replaceAll('w', '')
+		let n = tree_library.get(id)
+		if(!n.guess) {
+			return clicked_id == n.id ? "selected_node" : "node"
+		} else {
+			return clicked_id == n.id ? "selected_guess" : "guess"
+		}
+	}
+
 </script>
 
 {#if parse_list}
@@ -123,13 +135,27 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 				</td>
 			{/each}
 		</tr></table>
+		Possible guesses:
+		<table><tr>
+			{#each guess_list as guess}
+				<td on:click={()=>onParseClick([guess])}>
+					{#if parse_root.includes(guess)}
+						<b>{root_to_str_rep([guess], tree_library)}</b>	
+					{:else}
+					{root_to_str_rep([guess], tree_library)}
+					{/if}
+					<br>
+					({score2string([guess], tree_library)})
+				</td>
+			{/each}
+		</tr></table>
 {/if}
 <table>
 	<tr><td>
 {#if node_map}
 <svg height={node_map.height} width={node_map.width}>
 	{#each node_list as node}
-	    <text on:click={()=>onNodeClick(node.id)} class={clicked_id == node.id ? "selected_node" : "node"} 
+	    <text on:click={()=>onNodeClick(node.id)} class={svgTextClass(node.id)} 
 			id={node.id} x={node.x} y={node.y}>{node.text}</text>		
 	{/each}
 	{#each line_list as line }
@@ -143,7 +169,10 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 </td>
 <td>
 {#if clicked_id}
-<p><b>{tree_library.get(clicked_id).type}</b>: <i>"{tree_library.get(clicked_id).form}"</i><br/></p>
+<p><b>{tree_library.get(clicked_id).type}</b>: <i>"{tree_library.get(clicked_id).form}"</i></p>
+	{#if tree_library.get(clicked_id).guess}
+		<p>guess: {tree_library.get(clicked_id).guess}</p>		
+	{/if}
 <p style="column-count: {clicked_data.size > 5 ? 2 : 1}; width: fit-content;">
 {#each Array.from(clicked_data.keys()) as key}
 	{key}: {clicked_data.get(key)}<br/>
@@ -165,6 +194,19 @@ Rule: <pre>"{rule2string(clicked_id)}"</pre>
 		font-family: Arial, Helvetica, sans-serif;
 			font-size: 1em;
 			font-style: normal;
+			user-select: none;
+			font-weight: bold;
+	}
+	.guess {
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 1em;
+			font-style: italic;
+			user-select: none;
+	}
+	.selected_guess {
+		font-family: Arial, Helvetica, sans-serif;
+			font-size: 1em;
+			font-style: italic;
 			user-select: none;
 			font-weight: bold;
 	}

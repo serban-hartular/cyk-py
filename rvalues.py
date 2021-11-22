@@ -62,7 +62,7 @@ class RValues(Set[str]):
     def __repr__(self) -> str:
         if self.isAll():
             return 'RValues(%s)' % RValues.ALL_STR
-        return (RValues.VAR_STR if self.isVariable else '') + super(Set, self).__repr__()
+        return (RValues.VAR_STR if self.isVariable else '') + super().__repr__()
     def __str__(self) -> str:
         if self.isAll():
             return RValues.ALL_STR

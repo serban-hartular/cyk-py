@@ -11,6 +11,7 @@ FORM_STR = 'form'
 DEPREL_STR = 'deprel'
 LEMMA_STR = 'lemma'
 HEAD_STR = 'h'
+UNKOWN_STR = '?'
 
 grammar = """
 %import common.WS

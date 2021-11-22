@@ -6,8 +6,9 @@ from rvalues import RValues
 
 COMMENT_STR = '#'
 
-def load_grammar(text : str):
-    lines = text.split('\n')
+def load_grammar(lines):
+    if isinstance(lines, str):
+        lines = lines.split('\n')
     line_count = 0
     rule_list = list()
     group_dict = dict()

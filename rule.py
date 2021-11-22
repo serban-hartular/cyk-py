@@ -20,6 +20,15 @@ class NodeData(Dict[str, RValues]):
         super().__setitem__(key, RValues(value))
     def to_jsonable(self) -> dict:
         return {k: self[k].to_jsonable() for k in self.keys()}
+    def _to_text(self) -> str:
+        text = str(self[TYPE_STR]) if TYPE_STR in self else ''
+        text += '('
+        text += ' '.join([k + '=' + str(v) for k,v in self.items() if k != TYPE_STR])
+        text += ')'
+        return text
+    def __repr__(self) -> str:
+        return self._to_text()
+        
 
 # def isVar(val : RValues):
 #     if not val or len(val) != 1: return None
@@ -82,10 +91,12 @@ class RuleItem:
         self.constraints = {c.key : c for c in constraints if not c.isVariable } 
         self.variables = {c.key : c for c in constraints if c.isVariable}
         self.annotation = annotation if annotation else dict()
-    def matches(self, item : NodeData, variable_dict : dict):
+    def matches(self, item : NodeData) -> bool:
         for key, constraint in self.constraints.items():
             if not constraint.matches(item):
                 return False
+        return True
+    def do_variables(self, item : NodeData, variable_dict : dict) -> bool:
         for key, variable in self.variables.items():
             if not variable.process_variable(item, variable_dict):
                 return False
@@ -115,12 +126,16 @@ class Rule:
         self.score = 1
     def apply(self, candidates : List[NodeData]) -> (NodeData, List[Dict]):
         if len(candidates) != len(self.children):
-            return None
+            return None, None
         # try constraints on candidates
         variable_dict = defaultdict(lambda : RValues.all())
+        # ugly, but I want to do them separate
         for i in range(0, len(candidates)):
-            if not self.children[i].matches(candidates[i], variable_dict):
-                return None
+            if not self.children[i].matches(candidates[i]):
+                return None, None
+        for i in range(0, len(candidates)):
+            if not self.children[i].do_variables(candidates[i], variable_dict):
+                return None, None
         #create parent node. First add head data if there is any
         parent_node = NodeData()
         for child, candidate in zip(self.children, candidates):
@@ -145,3 +160,46 @@ class Rule:
         return self.to_text()
     def __repr__(self):
         return str(self)
+    def solve_for_child(self, given_list : List[NodeData]) -> (List[NodeData], List[Dict]):
+        rule_terms = [self.parent] + self.children
+        assert len(rule_terms) == len(given_list)
+        # preliminary sanity check
+        for node, rule_item in zip(given_list, rule_terms):
+            if node is not None and not rule_item.matches(node):
+                return None, None
+        given_parent = given_list[0]
+        given_children = given_list[1:]
+        solved_parent = NodeData(given_parent)
+        solved_children = []
+        for given, rule_item in zip(given_children, self.children):
+            if given is not None:
+                solved_children.append(NodeData(given))
+                continue
+            # not given, solve
+            solved = NodeData()
+            if rule_item.annotation.get(DEPREL_STR) == HEAD_STR: # it's a head
+                solved.update(given_parent) # transfer data from parent
+            # add data from rule
+            solved.update(rule_item.to_node())
+            solved_children.append(solved)
+        # now do variables
+        variable_dict = defaultdict(lambda : RValues.all())
+        for node, rule_item in zip([solved_parent] + solved_children, rule_terms):
+            if not rule_item.do_variables(node, variable_dict):
+                # print('variable fail ' + str(variable_dict))
+                return None, None
+        # print(variable_dict)
+        # assign variable values
+        for node, rule_item in zip([solved_parent] + solved_children, rule_terms):
+            for key, var_name in rule_item.variables.items():
+                var_name = var_name.values.get()
+                value = variable_dict[var_name]
+                # print(var_name, value)
+                if value.isAll(): continue
+                node[key] = value
+            # for var_name, value in variable_dict.items():
+            #     if value.isAll(): continue
+            #     node[var_name] = value
+
+        return [solved_parent] + solved_children, [child.annotation for child in self.children]
+

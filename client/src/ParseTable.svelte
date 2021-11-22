@@ -27,7 +27,7 @@
 	</table>
 
 <style>
-	table, td {
+	td {
   		border: 1px solid black;
 		vertical-align: top;
 	}

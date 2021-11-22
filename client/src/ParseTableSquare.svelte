@@ -69,7 +69,7 @@ $:{ tree_library;
 {:else}
     {#each id_list as id}
     <!-- <p class={classFromId(id)} on:click={() => selected = id}> -->
-        <span on:click={()=>parse_root=[id]}>
+        <span on:click={()=>parse_root=[id]} style="font-style: {tree_library.get(id).guess ? 'italic' : 'normal'};">
         {#if parse_root && parse_root.includes(id)}
         <b>{tree_library.get(id).type},</b>
         {:else}

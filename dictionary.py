@@ -4,7 +4,7 @@ from collections import defaultdict
 import pyconll
 
 from rule import NodeData
-from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
+from rule_io import TYPE_STR, FORM_STR, LEMMA_STR, UNKOWN_STR
 from typing import List
 
 import re
@@ -55,11 +55,13 @@ def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.Pars
         tree.score = tree.score / score_sum
     return cyk_parser.ParseSquare(tree_list)
 
-def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) -> List[cyk_parser.ParseSquare]:
+def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) \
+        -> (List[cyk_parser.ParseSquare], List[str]):
     # words = text.split()
     split = re.split(r'[ \t,\.;:\\?!@#$%^&]', text)
     # words = split
     words = []
+    unknown_words = []
     for atom in split:
         if not atom: continue
         if '-' in atom:
@@ -70,9 +72,11 @@ def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict
     for word in words:
         sq = word_2_parse_square(word)
         if not sq:
-            raise Exception('Unkown word "%s"' % word)
+            # raise Exception('Unkown word "%s"' % word)
+            sq = cyk_parser.ParseSquare([cyk_parser.Tree(NodeData({TYPE_STR: UNKOWN_STR, FORM_STR: word}))]) # unknown
+            unknown_words.append(word)
         sq_list.append(sq)
-    return sq_list
+    return sq_list, unknown_words
 
 def separate_dashed_word(word : str, word_dict = ud_word_dict) -> List[str]:
     atoms = re.split('(-)', word)

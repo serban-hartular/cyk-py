@@ -27,9 +27,10 @@ class Grammar:
                     continue
                 rule.score = 1 / (n+1)
                 n += 1
-
+    def is_known(self, type_str : str) -> bool:
+        return type_str in self.terminals.union(self.nonterminals)
 class Tree:
-    def __init__(self, data : NodeData, rule : Rule = None, children : List['Tree'] = None, children_annot : List[Dict] = None):
+    def __init__(self, data : NodeData, rule : Rule = None, children : List['Tree'] = None, children_annot : List[Dict] = None, guess = False):
         self.data = data
         self.children = children if children else list()
         self.children_annot = children_annot
@@ -37,6 +38,7 @@ class Tree:
         self.score = 1
         self.num_nodes = 1 + sum([child.num_nodes for child in self.children])
         self.nscore = 0
+        self.guess = guess
         if not children:
             self.form = ' '.join([s for s in data[FORM_STR]]) if FORM_STR in data else ''
         else:
@@ -51,7 +53,7 @@ class Tree:
         self.nscore = math.log10(self.score) / self.num_nodes
         
     def to_jsonable(self, add_children = False) -> dict:
-        str_attrs = ['type', 'form', 'score', 'nscore', 'rule']
+        str_attrs = ['type', 'form', 'score', 'nscore', 'rule', 'guess']
         obj = {k:str(self.__getattribute__(k)) for k in str_attrs}
         obj['data'] = self.data.to_jsonable()
         if add_children:
@@ -153,9 +155,8 @@ class Parser:
         while(i < len(square)):
             node = square[i]
             for rule in self.grammar.singletons:
-                result = rule.apply([node.data])
-                if not result: continue
-                (data, annotations) = result
+                (data, annotations) = rule.apply([node.data])
+                if not data: continue
                 new_node = Tree(data, rule, [node], annotations)
                 similar = [t for t in square if new_node.is_similar(t)]
                 if not prune_similar or (prune_similar and not similar):
@@ -171,18 +172,32 @@ class Parser:
             child_sq2 = self.table[r2][c2]
             for node1, node2 in [(n1, n2) for n1 in child_sq1 for n2 in child_sq2]: 
                 for rule in self.grammar.doubletons:
-                    result = rule.apply([node1.data, node2.data])
-                    if not result: continue # rule could not be applied
-                    (data, annotations) = result
+                    (data, annotations) = rule.apply([node1.data, node2.data])
+                    if not data: continue # rule could not be applied
                     new_node = Tree(data, rule, [node1, node2], annotations)
                     similar = [t for t in square if new_node.is_similar(t)] # list of trees similar to new_node
                     if not prune_similar or (prune_similar and not similar): # to ommit if similar
-                        square.append(new_node)        
-
+                        square.append(new_node)  
+    def root(self, **kwargs):
+        return self.cell((len(self.table)-1, 0), **kwargs)
+    def cell(self, pos, y = None, **kwargs) -> ParseSquare:
+        """kwargs:  filter='all' will return all content
+                    filter='guess' will return only guesses
+                    filter=None will return only non-guesses (default)
+                    filter=lambda t will run filter on content before returning
+        """
+        if y is not None:
+            pos = (pos, y)
+        filter = kwargs.get('filter')
+        if filter == 'all': filter=lambda t : True
+        if filter == 'guess' : filter=lambda t : t.guess
+        if filter is None : filter = lambda t : not t.guess
+        return ParseSquare([t for t in self.table[pos[0]][pos[1]] if filter(t)])
+    
     def get_parses(self, position : tuple = None) -> List[List[Tree]]:
         (row, col) = position if position else (len(self.table)-1, 0)
-        if self.table[row][col]: # done!
-            return [[p] for p in self.table[row][col]]
+        if self.cell(row, col): # done!
+            return [[p] for p in self.cell(row, col)]
         # try children positions
         parses = []
         for possible_children in Parser.generate_child_squares(row, col):
@@ -202,7 +217,7 @@ class Parser:
             row = [list() for col in range(row_index, len(self.table))]
             json_table.append(row)
             for col_index in range(0, len(row)):
-                for tree in self.table[row_index][col_index]:
+                for tree in self.cell((row_index, col_index), filter='all'): #self.table[row_index][col_index]:
                     json_table[row_index][col_index].append(len(tree_list)) #this will be the tree ID
                     tree_list.append(tree)  # tree ID is index of tree in list
         tree_json_list = []
@@ -211,9 +226,14 @@ class Parser:
             tree_json['id'] = i
             tree_json['children'] = [tree_list.index(child) for child in tree_list[i].children]
             tree_json_list.append(tree_json)
+        # get actual parses
         parses = self.get_parses()
         root_list = []
         for parse in parses:
             root_list.append([tree_list.index(i) for i in parse])
-        return {'nodes':tree_json_list, 'table':json_table, 'root_list':root_list}
+        # get guessed parses, if any
+        guess_list = self.cell((N-1, 0), filter='guess')
+        guess_list = [tree_list.index(t) for t in guess_list]
+        return {'nodes':tree_json_list, 'table':json_table, 'root_list':root_list, 
+                'guess_list': guess_list}
             

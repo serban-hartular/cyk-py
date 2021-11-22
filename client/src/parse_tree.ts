@@ -5,6 +5,7 @@ export class Node {
     score : number
     nscore : number
     type : string
+    guess : boolean
     form : string
     children_ids : Array<string>
     children : Array<Node>
@@ -15,7 +16,9 @@ export class Node {
         this.rule = json_node['rule']
         this.score = Number(json_node['score'])
         this.nscore = Number(json_node['nscore'])
+        this.guess = (['True', 'true'].includes(json_node['guess']))
         this.type = json_node['type']
+        if(this.guess) this.type += '?'
         this.form = json_node['form']
         this.children_ids = json_node['children'].map((n) => String(n))
         this.children = null
@@ -34,12 +37,13 @@ export class TreeLibrary {
     position_map : Map<string, [number, number]>
     parse_table : Array<Array<Array<string>>>
     root_list : Array<Array<string>>
+    guess_list : Array<string>
     roots : Array<string>
     // selected : string = undefined
     // selected_children = new Array<string>()
     // selected_descendants = new Array<string>()
 
-    constructor(tree_list : any, json_parse_table : any, root_list : any) {
+    constructor(tree_list : any, json_parse_table : any, root_list : any, guess_list : any) {
         this.tree_map = new Map<string, Node>()
         for(let tree of tree_list) {
             this.tree_map.set(String(tree.id), new Node(tree))
@@ -73,9 +77,7 @@ export class TreeLibrary {
         for(let root of root_list) {
             this.root_list.push(root.map(x => String(x)))
         }
-        
-        // this.setSelected(this.root_list[0][0])
-        // console.log(this.selected)
+        this.guess_list = guess_list.map(x => String(x))
     }
 
     get(id : string) {
