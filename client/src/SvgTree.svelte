@@ -7,7 +7,11 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
     export let tree_library : TreeLibrary
 	export let parse_root : Array<string>
 	let parse_list : Array<Array<string>> = tree_library.root_list
-	parse_root = parse_list[0]
+	if(parse_list.length > 0 && parse_list[0].length == 1) { //complete parse
+		parse_root = parse_list[parse_list.length - 1]
+	} else { //fragmented parse
+		parse_root = parse_list[0]
+	}
 	let guess_list = tree_library.guess_list
 	let node_map : SvgMap = new SvgMap(tree_library, parse_root)
 	let node_list : Array<SvgNode> = node_map.getNodes()
@@ -20,22 +24,32 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 
 
 	$: { 	tree_library;
+			// console.log('lib changed')
 			if(tree_library == tree_library_ref) {
-				// console.log('Dummy tree_library change')
+				// console.log('dummy')
 			} else {
-				// console.log('parse_list <- tree_library')
+				// console.log('not dummy')
 				parse_list = tree_library.root_list
-				parse_root = parse_list[0]
+				//if(!parse_root)
+					parse_root = parse_list[0]
 				guess_list = tree_library.guess_list
+				if(guess_list.length > 0) {
+					parse_root = [guess_list[0]]
+				} else if(parse_list.length > 0 && parse_list[0].length == 1) { //complete parse
+					parse_root = parse_list[parse_list.length - 1]
+				} else { //fragmented parse
+					parse_root = parse_list[0]
+				}
+
 				tree_library_ref = tree_library
 		}
 	}
 
 	$: {
 		if(node_map.root_list == parse_root) {
-//			console.log('Dummy node map change')
+			// console.log('Dummy node map change')
 		} else {
-//			console.log('node_map <-  parse')
+			// console.log('node_map <-  parse')
 			node_map = new SvgMap(tree_library, parse_root)
 			onNodeClick(parse_root[0])
 		}	
@@ -121,7 +135,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 
 {#if parse_list}
 		<!-- Table of possible parses -->
-		Possible parses:
+		<u>Possible parses:</u>
 		<table><tr>
 			{#each parse_list as root}
 				<td on:click={()=>onParseClick(root)}>
@@ -135,7 +149,9 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 				</td>
 			{/each}
 		</tr></table>
-		Possible guesses:
+		{#if guess_list.length > 0}
+		<u>Possible guesses:</u>
+		{/if}
 		<table><tr>
 			{#each guess_list as guess}
 				<td on:click={()=>onParseClick([guess])}>
@@ -167,8 +183,8 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 </svg>
 {/if}
 </td>
-<td>
-{#if clicked_id}
+<td style="border-left: 1px solid;">
+{#if clicked_id && clicked_id != undefined}
 <p><b>{tree_library.get(clicked_id).type}</b>: <i>"{tree_library.get(clicked_id).form}"</i></p>
 	{#if tree_library.get(clicked_id).guess}
 		<p>guess: {tree_library.get(clicked_id).guess}</p>		

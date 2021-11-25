@@ -29,6 +29,7 @@ export class Node {
                 this.children_deprels.push(deprel == undefined ? '' : deprel)
             }
         }
+    // console.log(this.id, this.form, this.type, this.guess)
     }
 }
 
@@ -78,6 +79,7 @@ export class TreeLibrary {
             this.root_list.push(root.map(x => String(x)))
         }
         this.guess_list = guess_list.map(x => String(x))
+        this.guess_list.sort((id1, id2) => this.get(id2).nscore - this.get(id1).nscore)
     }
 
     get(id : string) {

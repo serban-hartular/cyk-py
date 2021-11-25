@@ -39,17 +39,19 @@ infile = open(ud_word_dict_filename, 'rb')
 ud_word_dict = pickle.load(infile)
 infile.close()
 
-def word_dict_2_tree(word_rec : dict) -> cyk_parser.Tree:
+def word_dict_2_tree(form : str, word_rec : dict) -> cyk_parser.Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
+    node_data[FORM_STR] = form
     count = word_rec['count']
     tree = cyk_parser.Tree(NodeData(node_data))
     tree.score = count
     return tree
 
 def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.ParseSquare:
+    form = word
     word = word.lower()
     if not word in word_dict: return None
-    tree_list = [word_dict_2_tree(word_rec) for word_rec in word_dict[word]]
+    tree_list = [word_dict_2_tree(form, word_rec) for word_rec in word_dict[word]]
     score_sum = sum([tree.score for tree in tree_list])
     for tree in tree_list:
         tree.score = tree.score / score_sum

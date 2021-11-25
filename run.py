@@ -21,24 +21,26 @@ grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # NP ::= h:PRON
 # """
 
+from prob_parser import ProbabilisticParser
 
 with open('rom_cfg_0.1.cfg', 'r', encoding='utf8') as fptr:
     grammar = load_grammar(fptr)
-parser = Parser(grammar) #faster_parsers.PoolParser(grammar)
-
-def parse(text : str, _parser : Parser = parser):
+parser_old = Parser(grammar)
+parser = ProbabilisticParser(grammar)
+def parse(text : str, _parser : ProbabilisticParser = parser):
     sq_list, unknown = text_2_square_list(text)
     if unknown:
         print('Unkown: ' + ', '.join(unknown))
-    _parser.parse(sq_list)
-    return _parser.get_parses()
+    _parser.input(sq_list)
+    return _parser.next_parse()
+
+from guess_tree import guess_tree
+from cyk_parser import *
 
 if __name__ == '__main__':
-    from rule import *
-    from guess_tree import *
-    parse('un bou *** are fete')
-    # parser.cell(0, 1).clear()
-    vp = [r for r in grammar.doubletons if str(r).startswith('VP')]
-
-    s = guess_tree(parser, NodeData({TYPE_STR:'VP'}), add_guesses=True)
-    print(s)
+    # from rule import *
+    # from guess_tree import *
+    print(parse('Ion are *** fete'))
+    guesser = parser.table_copy()
+    guess_tree(guesser, NodeData({'type':'VP'}), add_guesses=True)
+    guesser.to_jsonable()

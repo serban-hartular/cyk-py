@@ -71,6 +71,7 @@ export class SvgMap extends Map<string, SvgNode>{
     constructor(tree_library : TreeLibrary, root_list : Array<string>) {
         super()
         this.root_list = root_list
+        //let word_map = new Map<string, Array<string>>()
         for(let root_id of this.root_list) {
             for(let id of tree_library.traverse(root_id)) {
                 let tree = tree_library.get(id)
@@ -86,12 +87,19 @@ export class SvgMap extends Map<string, SvgNode>{
                     word.col = node.col
                     node.children = [word.id]
                     this.set(word.id, word)
+                    // this.setSuffix(word, word_map)
                 }
             }
             this.setFirstCoordinates(root_id)
         }
         this.generateLines()
     }
+
+    // setSuffix(word : SvgNode, word_map : Map<string, Array<string>>) {
+    //     if(!word_map.has(word.text)) {
+    //         word_map.set()
+    //     }
+    // }
 
     getNodes() : Array<SvgNode> {
         return Array.from(this.values())

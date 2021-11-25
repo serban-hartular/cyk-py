@@ -7,9 +7,11 @@ def _empty(parser : Parser, pos : tuple) -> bool:
     
 def guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None, **kwargs) -> List[Tree]:
     add_guesses = kwargs.get('add_guesses') is True
+    exclude_similar = False if kwargs.get('exclude_similar') == False else True
     if pos is None:
         pos = (len(parser.table)-1, 0)  # top cell
 
+    # do bottom row if there, and return
     if guess_root[TYPE_STR].get() in parser.grammar.terminals and pos[0] == 0: # bottom row
         unknowns = [t for t in parser.cell(pos) if not parser.grammar.is_known(t.type)]
         form = unknowns[0].form if unknowns else ''
@@ -17,7 +19,10 @@ def guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None, **kwa
         guess_root[FORM_STR] = form
         # print('returning terminal ' + str(guess_root))
         t = Tree(guess_root, None, None, None, True)
-        if add_guesses: parser.table[pos[0]][pos[1]].append(t)
+        if add_guesses:
+            if parser.table[pos[0]][pos[1]].contains_similar(t):
+                return []
+            parser.table[pos[0]][pos[1]].add(t, exclude_similar)
         return [t]
 
     # next do doubletones
@@ -26,11 +31,12 @@ def guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None, **kwa
         # print(guess_root, childpos1, childpos2)
         if not _empty(parser, childpos1) and not _empty(parser, childpos2):
             # raise Exception('Parses present in children {}, {} of {}'.format(str(pos), str(childpos1), str(childpos2)))
-            return None
+            continue #return None
         if _empty(parser, childpos1) and _empty(parser, childpos2):
             # raise Exception(
             #     'Parses absent in children both {}, {} of {}'.format(str(pos), str(childpos1), str(childpos2)))
-            return None
+            continue 
+            # return None
         if _empty(parser, childpos1):
             missing_index = 1
             guess_pos, existing_pos = (childpos1, childpos2)
@@ -47,7 +53,12 @@ def guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None, **kwa
                 solved = nodes[missing_index]
                 kids_guesses = guess_tree(parser, solved, guess_pos, **kwargs) # list of possible guesses based on solved
                 if kids_guesses is None: return None
-                # new_kids = [solved, existing] if missing_index == 1 else [existing, solved]
+                new_parents = []
+                # for kid in kids_guesses:
+                #     child_list = [kid, existing] if missing_index == 1 else [existing, kid]
+                #     parent_data = rule.apply([t.data for t in child_list])
+                #     new_parents.append(Tree(parent_data, rule, child_list, 
+                #                     annot, True))
                 new_parents = [Tree(nodes[0], rule, [kid, existing] if missing_index == 1 else [existing, kid], 
                                     annot, True) for kid in kids_guesses]
                 guess_list += new_parents
@@ -62,6 +73,11 @@ def guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None, **kwa
         if not child_guesses: continue # no guess found
         guess_list += [Tree(root, rule, [child], annot, True) for child in child_guesses]
     
-    if add_guesses: parser.table[pos[0]][pos[1]] += guess_list
+    if exclude_similar:
+        guess_list = [t for t in guess_list if not parser.table[pos[0]][pos[1]].contains_similar(t)]
+    if add_guesses:
+        parser.table[pos[0]][pos[1]] += guess_list
+        # parser.table[pos[0]][pos[1]].add(guess_list, exclude_similar)
+
     return guess_list
     

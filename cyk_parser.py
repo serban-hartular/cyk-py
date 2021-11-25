@@ -1,6 +1,6 @@
 import math
 
-from rule import Rule, NodeData
+from rule import Rule, NodeData, DEPREL_STR, HEAD_STR
 from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
 from typing import List, Dict, Tuple
 
@@ -65,9 +65,16 @@ class Tree:
         for child in self.children:
             yield from child.traverse()
     def is_similar(self, other : 'Tree') -> bool:
+        if not self.children and not other.children:
+            return self.data == other.data
+        if self.type != other.type or self.data.get(LEMMA_STR) != other.data.get(LEMMA_STR):
+            return False
         return set(self.get_args()) == set(other.get_args())
     def get_head_child(self) -> 'Tree':
-        """Find child of same type and same lemma"""
+        if not self.children: return None
+        for annot, child in zip(self.children_annot, self.children):
+            if annot.get(DEPREL_STR) == HEAD_STR:
+                return child
         heads = [c for c in self.children if c.type == self.type and c.data.get(LEMMA_STR) == self.data.get(LEMMA_STR)]
         return heads[0] if heads else None
     def get_args(self) -> List[tuple]:
@@ -125,14 +132,24 @@ class Tree:
 class ParseSquare(List[Tree]):
     def __init__(self, tree_list : List[Tree] = list()):
         super().__init__(tree_list)
-    def from_data_list(data_list : List[NodeData]):
-        return ParseSquare([Tree(data) for data in data_list])
-
+    def contains_similar(self, t : Tree) -> bool:
+        for c in self:
+            if c.is_similar(t):
+                return True
+        return False
+    def add(self, trees, exclude_similar = False) -> int:
+        if not hasattr(trees, '__iter__'):
+            trees = [trees]
+        if exclude_similar:
+            trees = [t for t in trees if not self.contains_similar(t)]
+        self.extend(trees)
+        return len(trees)
+        
 class Parser:
     def __init__(self, grammar : Grammar):
         self.grammar = grammar
         self.table = list()
-    def parse(self, input : List[ParseSquare], prune_similar = True):
+    def parse(self, input : List[ParseSquare], exclude_similar = True):
         N = len(input)
         self.generate_table(N)
         for sq in input: # verify input -- no cell empty
@@ -141,16 +158,16 @@ class Parser:
         for row_index in range(0, len(self.table)):
             for col_index in range(0, len(self.table[row_index])):
                 square = self.table[row_index][col_index]
-                self.do_doubleton_rules(row_index, col_index, prune_similar)
-                self.do_singleton_rules(square, prune_similar)
-                square.sort(key=lambda t: -t.score)
+                self.do_doubleton_rules(row_index, col_index, exclude_similar)
+                self.do_singleton_rules(square, exclude_similar)
+                square.sort(key=lambda t: -t.nscore)
         return self.table
     def generate_table(self, N : int):
         self.table = list() # array that holds the rows        
         for row_index in range(0, N): # create row
             row = [ParseSquare() for col in range(row_index, N)]
             self.table.append(row)
-    def do_singleton_rules(self, square : ParseSquare, prune_similar : bool):
+    def do_singleton_rules(self, square : ParseSquare, exclude_similar : bool):
         i = 0 # index of node in square
         while(i < len(square)):
             node = square[i]
@@ -158,14 +175,15 @@ class Parser:
                 (data, annotations) = rule.apply([node.data])
                 if not data: continue
                 new_node = Tree(data, rule, [node], annotations)
-                similar = [t for t in square if new_node.is_similar(t)]
-                if not prune_similar or (prune_similar and not similar):
-                    square.append(new_node)
+                # similar = [t for t in square if new_node.is_similar(t)]
+                # if not exclude_similar or (exclude_similar and not similar):
+                #     square.append(new_node)
+                square.add(new_node, exclude_similar)
             i += 1
     @staticmethod
     def generate_child_squares(row_index : int, col_index : int) -> List[tuple]:
         return [((s, col_index),(row_index-s-1, col_index+s+1)) for s in range(0, row_index)]
-    def do_doubleton_rules(self, row_index : int, col_index : int, prune_similar : bool):
+    def do_doubleton_rules(self, row_index : int, col_index : int, exclude_similar : bool):
         square = self.table[row_index][col_index]
         for ((r1, c1), (r2, c2)) in Parser.generate_child_squares(row_index, col_index):
             child_sq1 = self.table[r1][c1]
@@ -175,9 +193,10 @@ class Parser:
                     (data, annotations) = rule.apply([node1.data, node2.data])
                     if not data: continue # rule could not be applied
                     new_node = Tree(data, rule, [node1, node2], annotations)
-                    similar = [t for t in square if new_node.is_similar(t)] # list of trees similar to new_node
-                    if not prune_similar or (prune_similar and not similar): # to ommit if similar
-                        square.append(new_node)  
+                    # similar = [t for t in square if new_node.is_similar(t)] # list of trees similar to new_node
+                    # if not exclude_similar or (exclude_similar and not similar): # to ommit if similar
+                    #     square.append(new_node)
+                    square.add(new_node, exclude_similar)
     def root(self, **kwargs):
         return self.cell((len(self.table)-1, 0), **kwargs)
     def cell(self, pos, y = None, **kwargs) -> ParseSquare:
@@ -194,10 +213,15 @@ class Parser:
         if filter is None : filter = lambda t : not t.guess
         return ParseSquare([t for t in self.table[pos[0]][pos[1]] if filter(t)])
     
-    def get_parses(self, position : tuple = None) -> List[List[Tree]]:
+    def get_parses(self, position : tuple = None, no_kids = True) -> List[List[Tree]]:
+        """ The no_kids flag means children residing in the same square won't be returned.
+        This dramatically reduces the number of incomplete parses. (Another consequence of 
+        allowing singleton rules.)
+        """
         (row, col) = position if position else (len(self.table)-1, 0)
         if self.cell(row, col): # done!
-            return [[p] for p in self.cell(row, col)]
+            all_children = [child for node in self.cell(row, col) for child in node.children]
+            return [[p] for p in self.cell(row, col) if p not in all_children]
         # try children positions
         parses = []
         for possible_children in Parser.generate_child_squares(row, col):
@@ -224,13 +248,33 @@ class Parser:
         for i in range(0, len(tree_list)):
             tree_json = tree_list[i].to_jsonable()
             tree_json['id'] = i
-            tree_json['children'] = [tree_list.index(child) for child in tree_list[i].children]
+            # debug
+            # tree_json['children'] = [tree_list.index(child) for child in tree_list[i].children]
+            tree_json['children'] = list()
+            for child in tree_list[i].children:
+                try:
+                    tree_json['children'].append(tree_list.index(child))
+                except Exception as e:
+                    print('Parent:' + str(tree_list[i]))
+                    print('Child:' + str(child))
+                    raise e
             tree_json_list.append(tree_json)
         # get actual parses
         parses = self.get_parses()
         root_list = []
-        for parse in parses:
-            root_list.append([tree_list.index(i) for i in parse])
+        first_len = 0
+        first_score = 0
+        for parse in parses: # only those that aren't too long
+            roots = tuple([tree_list.index(i) for i in parse])
+            score = sum([p.nscore for p in parse])
+            if first_len == 0:
+                first_len = len(roots)
+                first_score = score
+            if len(roots) > first_len and score < first_score:
+                break
+            if roots not in root_list:
+                root_list.append(roots)
+
         # get guessed parses, if any
         guess_list = self.cell((N-1, 0), filter='guess')
         guess_list = [tree_list.index(t) for t in guess_list]
