@@ -72,10 +72,6 @@ import SvgTree from "./SvgTree.svelte";
             return
 		let response
 		message = 'waiting for parse...'
-		if(grammar_change) {
-			console.log('grammar_changed')
-			console.log(grammar)
-		}
 		await request_parse(sentence)
 		.then(value =>  response = value)
 		.catch(reason => response = reason)
@@ -153,21 +149,31 @@ import SvgTree from "./SvgTree.svelte";
 </svelte:head>
 
 <main>
+	<div class="side">
+		<h4 style="text-indent: 10px">CYK Parser Demo</h4>
+		<ul>
+			<li><a href="#top">Top of Page</a></li>
+			{#if tree_library}
+			<li><a href="#parse_table">Parse Table</a></li>
+			{:else}
+			<li><span style="color:grey">Parse Table</span></li>
+			{/if}
+			<li><a href="#grammar">Grammar Editor</a></li>
+		</ul>
+	</div>
+	<div class="main">
 	<h3>Enter sentence:</h3>
 	<form on:submit|preventDefault={processInput}>
 		<input type="text" size="50" bind:value={sentence}><br/>
 		
-		<button type="submit">Parse</button>
+		<button type="submit">Parse</button> {message}
 		<!-- <button class="help" on:click={()=>getModal('parse_modal').open()}>?</button> -->
 	</form>
-	<p>{message}</p>
 	{#if unknown}
-		<p>
 		<b>Unknown words:</b> {unknown} <br/>
 		<button on:click={getGuess}>Guess Parse</button>
 			for root <input type="text" size="6" bind:value={guess_root}>
-		</p>
-		or...
+		<br/>
 	{/if}
 	
 	{#if tree_library}
@@ -180,14 +186,18 @@ import SvgTree from "./SvgTree.svelte";
 	{/if}
 
 	{#if tree_library}
-		<h1>Parse Table</h1>
+		<a name="parse_table">
+		<h3>Parse Table</h3></a>
 		<ParseTable bind:tree_library={tree_library} bind:parse_root={parse_root} />
 	{/if}
 
 	{#if grammar && grammar != undefined}
+	<a name="grammar">
+	<h3>Grammar Editor</h3></a>
 		<Grammar bind:grammar = {grammar} bind:grammar_change={grammar_change} />
 	{/if}
-
+	
+	</div>
 	</main>
 
 <style>
@@ -198,6 +208,30 @@ import SvgTree from "./SvgTree.svelte";
 		margin: 0 auto;
 	}
 	
+	.side {
+		height: 100%; /* Full-height: remove this if you want "auto" height */
+		width: 160px; /* Set the width of the sidebar */
+		position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+		z-index: 1; /* Stay on top */
+		top: 0; /* Stay at the top */
+		left: 0;
+		background-color: #EFEFEF; 
+  		overflow-x: hidden; /* Disable horizontal scroll */
+  		padding-top: 20px;
+	}
+	.side a {
+		/* padding: 6px 8px 6px 16px; */
+		text-decoration: none;
+		/* font-size: 25px; */
+		color: black;
+		display: block;
+	}
+
+	.main {
+		margin-left: 160px; /* Same as the width of the sidebar */
+  		/* padding: 0px 10px; */
+	}
+
 	@media (min-width: 640px) {
 		main {
 			max-width: none;

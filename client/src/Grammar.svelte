@@ -9,6 +9,7 @@ import { onMount } from "svelte";
     export let grammar_change : boolean
 
     grammar_change = false
+    let filter = ''
 
     function blurRule(id : number) {
         console.log(id, grammar[id])
@@ -28,11 +29,13 @@ import { onMount } from "svelte";
     //onMount(() => { console.log('mounting grammar'); grammar_change = false })
 
 </script>
-
-<h2>Grammar</h2>
-<button on:click={() => grammar = ['     ']}>Clear</button>
-<table>
+<table><tr>
+<td><button on:click={() => grammar = ['']}>Clear Grammar</button></td>
+<td>Rule Filter: <input bind:value={filter} /></td>
+</tr></table>
+<table class="grammar">
     {#each grammar as rule, i}
+        {#if filter == '' || rule.startsWith(filter)}
         <tr>
             <td class="rulecell" contenteditable="true" on:blur={() => blurRule(i)}
                 bind:textContent={rule}>
@@ -43,17 +46,18 @@ import { onMount } from "svelte";
                 <button class="insdel" on:click={() => splice(i, 1)    }>Del</button>
             </td>
         </tr>
+        {/if}
         
     {/each}
 </table>
 
 <style>
-    table, td {
+    table.grammar, td.buttons, td.rulecell {
         font-family: Arial, Helvetica, sans-serif;
         font-size: 11pt;
         border-spacing: 0px;
     }
-    td {
+    td.buttons, td.rulecell {
         border: 1px solid black;
         border-collapse: collapse;
         padding: 0px;
