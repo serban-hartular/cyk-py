@@ -35,11 +35,25 @@ import prob_parser
 # grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # grammar = cyk_grammar_loader.load_grammar(grammar_rules)
 with open('rom_cfg_0.1.cfg', 'r', encoding='utf8') as fptr:
-    grammar = cyk_grammar_loader.load_grammar(fptr)
+    default_grammar = cyk_grammar_loader.load_grammar(fptr)
 
 
-client_id = 0
+client_count = 0
 client_data = dict()
+
+@app.route("/get-client-id", methods=['POST'])
+def get_client_id():
+    global client_count
+    grammar = default_grammar
+    client_count += 1
+    client_id = client_count
+    client_data[client_id] = {'grammar':grammar,
+                              'parser':prob_parser.ProbabilisticParser(grammar),
+                              'unknown_words':list()}
+
+    grammar_strings = [str(rule) for rule in grammar.rules]
+    return json.dumps({'client_id': client_id, 'grammar':grammar_strings})
+
 
 @app.route("/parse", methods=['POST'])
 def parse_text():
@@ -57,9 +71,22 @@ def parse_text():
     if not client_id:
         return_obj['error_msg'] = 'No client_id'
         return return_obj
-    if not client_id in client_data:
-        client_data[client_id] = {'parser':prob_parser.ProbabilisticParser(grammar),
-                                  'unknown_words':list()}
+    new_grammar = json_obj.get('grammar')
+    if new_grammar is None: # if no rule list transmitted, use existing
+        grammar = client_data[client_id]['grammar']
+    else:
+        if not new_grammar: # is empty
+            grammar = default_grammar
+        else:
+            rule_text = '\n'.join(new_grammar)
+            try:
+                grammar = cyk_grammar_loader.load_grammar(rule_text)
+            except Exception as e:
+                return_obj['error_msg'] = 'Grammar rule error: ' + str(e)
+                return return_obj
+        client_data[client_id]['grammar'] = grammar
+        client_data[client_id]['parser'] = prob_parser.ProbabilisticParser(grammar)
+        
     # get words
     sq_list, unknown = dictionary.text_2_square_list(text)
     client_data[client_id]['unknown_words'] = ', '.join(('"'+word+'"') for word in unknown)
@@ -132,11 +159,6 @@ def guess_parse():
         return return_obj
     return json.dumps(return_obj)
 
-@app.route("/get-client-id", methods=['POST'])
-def get_client_id():
-    global client_id
-    client_id += 1
-    return json.dumps({'client_id': client_id})
 
 # @app.route("/client-destroy", methods=['POST'])
 # def client_destroy():

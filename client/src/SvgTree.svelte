@@ -167,7 +167,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 		</tr></table>
 {/if}
 <table>
-	<tr><td>
+	<tr><td style="min-width: 250px;">
 {#if node_map}
 <svg height={node_map.height} width={node_map.width}>
 	{#each node_list as node}

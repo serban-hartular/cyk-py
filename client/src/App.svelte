@@ -1,5 +1,6 @@
 <script lang="ts">
 import { onDestroy, onMount } from "svelte";
+import Grammar from "./Grammar.svelte";
 
 	
 import ParseTable from "./ParseTable.svelte";
@@ -7,6 +8,8 @@ import  { TreeLibrary } from "./parse_tree";
 import SvgTree from "./SvgTree.svelte";
 
 	let client_id : number
+	let grammar : Array<string>
+	let grammar_change : boolean = false
 
 	let sentence: string
 	let message: string = ''
@@ -31,20 +34,33 @@ import SvgTree from "./SvgTree.svelte";
 			})
 		.then((response) => response.json())
 		.then((data) => data as Object)
-		.then((data) => client_id = Number(data['client_id']))
+		.then((data) => {
+			client_id = Number(data['client_id']);
+			grammar = data['grammar'].map((rule) => rule.length > 50 ? 
+				rule.replaceAll(/\t+/g, '\n\t') : rule.replaceAll(/\t+/g, ' '))
+			// console.log(client_id, grammar)
+			return data
 		})
+		// grammar = data['grammar']
+		// 
+	})
+
 
 	function request_parse(text: string) :Promise<Object> {
+		let body = { 	text: sentence,
+						guess : guess_root,
+						client_id : client_id
+		}
+		if(grammar_change) {
+			body['grammar'] = grammar.map((text) => text.replaceAll(/\s+/g, ' '))
+		}
+
 		return fetch('./parse', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    text: sentence,
-					guess : guess_root,
-					client_id : client_id
-				})
+                body: JSON.stringify(body)
 			})
 		.then((response) => response.json())
 		.then((data) => data as Object)
@@ -56,6 +72,10 @@ import SvgTree from "./SvgTree.svelte";
             return
 		let response
 		message = 'waiting for parse...'
+		if(grammar_change) {
+			console.log('grammar_changed')
+			console.log(grammar)
+		}
 		await request_parse(sentence)
 		.then(value =>  response = value)
 		.catch(reason => response = reason)
@@ -69,7 +89,7 @@ import SvgTree from "./SvgTree.svelte";
 		} else {
 			message = 'Server error:' + response.error_msg
 		}
-		//console.log(tree_library)
+		grammar_change = false
 	}
 
 	async function nextParse() {
@@ -92,6 +112,7 @@ import SvgTree from "./SvgTree.svelte";
 	}
 
 	async function request_next(path:string) :Promise<Object> {
+		let body = { guess : guess_root, client_id : client_id }
 		return fetch(path, {
                 method: 'POST',
                 headers: {
@@ -159,9 +180,13 @@ import SvgTree from "./SvgTree.svelte";
 	{/if}
 
 	{#if tree_library}
+		<h1>Parse Table</h1>
 		<ParseTable bind:tree_library={tree_library} bind:parse_root={parse_root} />
 	{/if}
 
+	{#if grammar && grammar != undefined}
+		<Grammar bind:grammar = {grammar} bind:grammar_change={grammar_change} />
+	{/if}
 
 	</main>
 
