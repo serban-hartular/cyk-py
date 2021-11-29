@@ -65,30 +65,42 @@ class Tree:
         for child in self.children:
             yield from child.traverse()
     def is_similar(self, other : 'Tree') -> bool:
-        if not self.children and not other.children:
-            return self.data == other.data
-        if self.type != other.type or self.data.get(LEMMA_STR) != other.data.get(LEMMA_STR):
-            return False
-        return set(self.get_args()) == set(other.get_args())
+        # if not self.children and not other.children:
+        #     return self.data == other.data
+        # if self.type != other.type or self.data.get(LEMMA_STR) != other.data.get(LEMMA_STR):
+        #     return False
+        head1, arglist1 = self.get_args()
+        head2, arglist2 = other.get_args()
+        return head1 == head2 and set(arglist1) == set(arglist2)
+        # return set(self.get_args()) == set(other.get_args())
     def get_head_child(self) -> 'Tree':
         if not self.children: return None
+        # head deprel
         for annot, child in zip(self.children_annot, self.children):
             if annot.get(DEPREL_STR) == HEAD_STR:
                 return child
-        heads = [c for c in self.children if c.type == self.type and c.data.get(LEMMA_STR) == self.data.get(LEMMA_STR)]
-        return heads[0] if heads else None
-    def get_args(self) -> List[tuple]:
+        # same lemma
+        heads = [c for c in self.children if c.data.get(LEMMA_STR) == self.data.get(LEMMA_STR)]
+        if heads:
+            return heads[0]
+        # return first child
+        return self.children[0]
+    def get_args(self) -> ('Tree', List[tuple]):
         """ Returns the children attached to the tree and the rules they were attached by
         for nodes of the same type with the same lemma beneath this tree
         """
         node = self
         arglist = []
-        while node:
+        while True:
             next = node.get_head_child()
+            if not next: break
             others = [c for c in node.children if c != next]
-            arglist += [(child, node.rule) for child in others]
+            if others:
+                arglist += [(child, node.rule) for child in others]
+            else: # this was a singleton rule
+                arglist.append((None, node.rule))
             node = next
-        return arglist
+        return node, arglist # head, arglist
     def __str__(self):
         if len(self.children) < 2:
             text = '"' + self.form + '"'

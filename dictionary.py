@@ -4,7 +4,7 @@ from collections import defaultdict
 import pyconll
 
 from rule import NodeData
-from rule_io import TYPE_STR, FORM_STR, LEMMA_STR, UNKOWN_STR
+from rule_io import TYPE_STR, FORM_STR, LEMMA_STR, UNKOWN_STR, POSITION_STR
 from typing import List
 
 import re
@@ -39,19 +39,21 @@ infile = open(ud_word_dict_filename, 'rb')
 ud_word_dict = pickle.load(infile)
 infile.close()
 
-def word_dict_2_tree(form : str, word_rec : dict) -> cyk_parser.Tree:
+def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser.Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
     node_data[FORM_STR] = form
+    if id is not None:
+        node_data[POSITION_STR] = id
     count = word_rec['count']
     tree = cyk_parser.Tree(NodeData(node_data))
     tree.score = count
     return tree
 
-def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.ParseSquare:
+def word_2_parse_square(word : str, id : str = None, word_dict = ud_word_dict) -> cyk_parser.ParseSquare:
     form = word
     word = word.lower()
     if not word in word_dict: return None
-    tree_list = [word_dict_2_tree(form, word_rec) for word_rec in word_dict[word]]
+    tree_list = [word_dict_2_tree(form, word_rec, id) for word_rec in word_dict[word]]
     score_sum = sum([tree.score for tree in tree_list])
     for tree in tree_list:
         tree.score = tree.score / score_sum
@@ -60,7 +62,7 @@ def word_2_parse_square(word : str, word_dict = ud_word_dict) -> cyk_parser.Pars
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) \
         -> (List[cyk_parser.ParseSquare], List[str]):
     # words = text.split()
-    split = re.split(r'[ \t,\.;:\\?!@#$%^&]', text)
+    split = re.split(r'[ \t,\.;:\\?!@#$%^&“„]', text)
     # words = split
     words = []
     unknown_words = []
@@ -71,12 +73,15 @@ def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict
         else:
             words.append(atom)
     sq_list = []
-    for word in words:
+    for id, word in enumerate(words):
         sq = word_2_parse_square(word)
         if not sq:
             # raise Exception('Unkown word "%s"' % word)
             sq = cyk_parser.ParseSquare([cyk_parser.Tree(NodeData({TYPE_STR: UNKOWN_STR, FORM_STR: word}))]) # unknown
             unknown_words.append(word)
+        # add ID
+        for tree in sq:
+            tree.data[POSITION_STR] = str(id+1)
         sq_list.append(sq)
     return sq_list, unknown_words
 

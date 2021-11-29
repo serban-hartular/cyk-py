@@ -12,6 +12,7 @@ DEPREL_STR = 'deprel'
 LEMMA_STR = 'lemma'
 HEAD_STR = 'h'
 UNKOWN_STR = '?'
+POSITION_STR = 'position'
 
 grammar = """
 %import common.WS

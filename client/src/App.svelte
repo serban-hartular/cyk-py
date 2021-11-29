@@ -38,7 +38,7 @@ import SvgTree from "./SvgTree.svelte";
 			client_id = Number(data['client_id']);
 			grammar = data['grammar'].map((rule) => rule.length > 50 ? 
 				rule.replaceAll(/\t+/g, '\n\t') : rule.replaceAll(/\t+/g, ' '))
-			// console.log(client_id, grammar)
+				// console.log(client_id, grammar)
 			return data
 		})
 		// grammar = data['grammar']

@@ -1,4 +1,4 @@
-from dictionary import text_2_square_list
+from dictionary import text_2_square_list, word_2_parse_square
 from cyk_parser import Parser, Grammar
 from cyk_grammar_loader import load_grammar
 
@@ -37,10 +37,32 @@ def parse(text : str, _parser : ProbabilisticParser = parser):
 from guess_tree import guess_tree
 from cyk_parser import *
 
-if __name__ == '__main__':
-    # from rule import *
-    # from guess_tree import *
-    print(parse('Ion are *** fete'))
-    guesser = parser.table_copy()
-    guess_tree(guesser, NodeData({'type':'VP'}), add_guesses=True)
-    guesser.to_jsonable()
+from ud_train.convert_to_ud import *
+from ud_train.process_conllu import *
+import pyconll
+
+# if __name__ == '__main__':
+#     filename = './corpus_ud/ro_rrt-ud-dev.conllu'
+# 
+#     conll = pyconll.load_from_file(filename)
+#     # sort by shortest
+#     sentence_list = [s for s in conll]
+#     sentence_list.sort(key=lambda s: len(s))
+#     for sentence in sentence_list:
+#         # get a parsed sentence
+#         ud_tokens = elim_upos_from_conllu(sentence, ['PUNCT', 'INTJ'])
+#         # feed tokens to dictionary for sq_list
+#         sq_list = [word_2_parse_square(token.form, str(i+1)) for i, token in enumerate(ud_tokens)]
+#         parser.input(sq_list)
+#         # look for parse that matches
+#         matching_parse = None
+#         while parser.next_parse() > 0:
+#             tree = parser.root()[-1]
+#             node_list = UD_Node.token_list(to_ud(tree)[0])
+#             if not UD_Node.differences(node_list, ud_tokens):
+#                 matching_parse = tree
+#                 break
+#         if matching_parse is None: # didn't find parse
+#             print("Couldn't find parse for " + sentence.text)
+#             break
+#  
