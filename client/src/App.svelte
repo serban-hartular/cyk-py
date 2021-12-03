@@ -18,6 +18,7 @@ import SvgTree from "./SvgTree.svelte";
 	let guess_root : string = 'VP'
 	let unknown : string = ''
 	let has_next_parse = true
+	let has_next_guess = true
 
 		onMount(async () => {
 			console.log('Mounting')	
@@ -81,7 +82,7 @@ import SvgTree from "./SvgTree.svelte";
 				response.data.root_list, response.data.guess_list)
 			message = 'Parse OK'
 			unknown = response.unknown
-			has_next_parse = response.has_next.toLowerCase() == 'true'
+			has_next_parse = response.has_next_parse.toLowerCase() == 'true'
 		} else {
 			message = 'Server error:' + response.error_msg
 		}
@@ -100,7 +101,7 @@ import SvgTree from "./SvgTree.svelte";
 				response.data.root_list, response.data.guess_list)
 			message = 'Parse OK'
 			unknown = response.unknown
-			has_next_parse = response.has_next.toLowerCase() == 'true'
+			has_next_parse = response.has_next_parse.toLowerCase() == 'true'
 			parse_root = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
 		} else {
 			message = 'Server error: ' + response.error_msg
@@ -138,9 +139,10 @@ import SvgTree from "./SvgTree.svelte";
 		if(!response.error_msg) {
 			tree_library = new TreeLibrary(response.data.nodes, response.data.table,
 				response.data.root_list, response.data.guess_list)
-			message = 'Guess OK'
+			message = 'Guess done'
 			unknown = response.unknown
 			parse_root = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
+			has_next_guess = response.has_next_guess.toLowerCase() == 'true'
 		} else {
 			message = 'Server error: ' + response.error_msg
 		}
@@ -176,7 +178,8 @@ import SvgTree from "./SvgTree.svelte";
 	</form>
 	{#if unknown}
 		<b>Unknown words:</b> {unknown} <br/>
-		<button on:click={getGuess}>Guess Parse</button>
+		<button on:click={getGuess} disabled={!has_next_guess}>
+			{has_next_guess ? 'Get Guess' : 'Out of guesses'}</button>
 			for root <input type="text" size="6" bind:value={guess_root}>
 		<br/>
 	{/if}

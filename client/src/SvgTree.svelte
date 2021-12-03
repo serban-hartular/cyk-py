@@ -169,7 +169,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 <table>
 	<tr><td style="min-width: 250px;">
 {#if node_map}
-<svg height={node_map.height} width={node_map.width}>
+<svg height={node_map.height} width={node_map.width + 50}>
 	{#each node_list as node}
 	    <text on:click={()=>onNodeClick(node.id)} class={svgTextClass(node.id)} 
 			id={node.id} x={node.x} y={node.y}>{node.text}</text>		

@@ -61,7 +61,7 @@ def parse_text():
     # global parser
     # global unknown_words
     # parser = prob_parser.ProbabilisticParser(grammar)
-    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next':str(False)}
+    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next_parse':str(False)}
     try: # get json obj
         json_obj = request.get_json()
     except Exception as e:
@@ -97,7 +97,7 @@ def parse_text():
     try:
         parser.input(sq_list)
         n = parser.next_parse()
-        return_obj['has_next'] = str(n != 0)
+        return_obj['has_next_parse'] = str(n != 0)
     except Exception as e:
         return_obj['error_msg'] = str(e)
         return return_obj
@@ -110,7 +110,7 @@ def parse_text():
 def next_parse():
     # global parser
     # global unknown_words
-    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next':str(False)}
+    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next_parse':str(False)}
     try:  # get json obj
         json_obj = request.get_json()
     except Exception as e:
@@ -123,7 +123,7 @@ def next_parse():
     parser = client_data[client_id]['parser']
 
     n = parser.next_parse()
-    return_obj['has_next'] = str(n != 0)
+    return_obj['has_next_parse'] = str(n != 0)
     # except Exception as e:
     #     return_obj['error_msg'] = str(e)
     #     return return_obj
@@ -135,7 +135,8 @@ def next_parse():
 def guess_parse():
     # global parser
     # global unknown_words
-    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next':str(False)}
+    return_obj = {'error_msg':'', 'data':'', 'unknown':'',
+                  'has_next_parse':str(False), 'has_next_guess':str(True)}
     try:  # get json obj
         json_obj = request.get_json()
     except Exception as e:
@@ -152,7 +153,8 @@ def guess_parse():
     parser = client_data[client_id]['parser']
     guesser = guess_tree.GuessTable(parser, NodeData({TYPE_STR:guess_root}))
     client_data[client_id]['guesser'] = guesser
-    guesser.guess()
+    if not guesser.guess():
+        return_obj['has_next_guess'] = str(False)
     data = guesser.to_jsonable()
     return_obj['unknown'] = client_data[client_id]['unknown_words']
     return_obj['data'] = data
@@ -169,7 +171,8 @@ def guess_parse():
 
 @app.route("/next-guess", methods=['POST'])
 def next_guess():
-    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next':str(False)}
+    return_obj = {'error_msg':'', 'data':'', 'unknown':'',
+                  'has_next_parse':str(False), 'has_next_guess':str(True)}
     try:  # get json obj
         json_obj = request.get_json()
     except Exception as e:
@@ -180,10 +183,12 @@ def next_guess():
         return_obj['error_msg'] = 'No client_id'
         return return_obj
     guesser = client_data[client_id]['guesser']
-    guesser.guess()
+    if not guesser.guess():
+        return_obj['has_next_guess'] = str(False)
     data = guesser.to_jsonable()
     return_obj['unknown'] = client_data[client_id]['unknown_words']
     return_obj['data'] = data
+    
     return json.dumps(return_obj)
 
 if __name__ == "__main__":

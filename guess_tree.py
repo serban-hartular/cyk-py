@@ -52,7 +52,7 @@ def greedy_guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None
                 if not nodes: continue # could not apply rule
                 # print(rule, nodes)
                 solved = nodes[missing_index]
-                kids_guesses = guess_tree(parser, solved, guess_pos, **kwargs) # list of possible guesses based on solved
+                kids_guesses = greedy_guess_tree(parser, solved, guess_pos, **kwargs) # list of possible guesses based on solved
                 if kids_guesses is None: return None
                 new_parents = []
                 # for kid in kids_guesses:
@@ -69,7 +69,7 @@ def greedy_guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None
         nodes, annot = rule.solve_for_child([guess_root, None])
         if not nodes: continue
         (root, child_data) = nodes
-        child_guesses = guess_tree(parser, child_data, pos, **kwargs) # these are trees
+        child_guesses = greedy_guess_tree(parser, child_data, pos, **kwargs) # these are trees
         if child_guesses is None: return None
         if not child_guesses: continue # no guess found
         guess_list += [Tree(root, rule, [child], annot, True) for child in child_guesses]
@@ -225,7 +225,7 @@ class GuessTable(prob_parser.ProbabilisticParser):
         # check if similar guess exists
         similar = [n for n in self.table[self.N-1][0] if n.guess and n.is_similar(root) and n is not root]
         if similar:
-            print('similar:\n%s\n%s' % (str(root), str(similar[0])))
+            # print('similar:\n%s\n%s' % (str(root), str(similar[0])))
             return True
         # add stack of nodes to table
         for (node, pos) in node_stack:
