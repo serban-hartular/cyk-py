@@ -51,7 +51,7 @@ class RValues(Set[str]):
         return super().issubset(s)
     def __eq__(self, other):
         other = RValues(other)
-        if self.isAll() and other._isAll(): return True
+        if self.isAll() != other.isAll(): return False
         return super().__eq__(other) and self.isVariable == other.isVariable
     def __bool__(self) -> bool:
         if self.isAll(): return True

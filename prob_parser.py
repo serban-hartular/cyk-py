@@ -20,6 +20,7 @@ class ProbabilisticParser(Parser):
         nodes_added = 0
         for row in range(0, self.N):
             for col in range(0, len(self.table[row])):
+                # first do doubletons
                 possible_trees = ParseSquare([])
                 for ((r1, c1), (r2, c2)) in Parser.generate_child_squares(row, col):
                     child_sq1 = self.table[r1][c1]

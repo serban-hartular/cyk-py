@@ -34,7 +34,7 @@ import  SvgNode, { SvgMap, Line } from "./svg_utils"
 					parse_root = parse_list[0]
 				guess_list = tree_library.guess_list
 				if(guess_list.length > 0) {
-					parse_root = [guess_list[0]]
+					parse_root = [guess_list[guess_list.length-1]]
 				} else if(parse_list.length > 0 && parse_list[0].length == 1) { //complete parse
 					parse_root = parse_list[parse_list.length - 1]
 				} else { //fragmented parse

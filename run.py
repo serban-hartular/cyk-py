@@ -23,7 +23,7 @@ grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 
 from prob_parser import ProbabilisticParser
 
-with open('rom_cfg_0.1.cfg', 'r', encoding='utf8') as fptr:
+with open('rom_cfg_0.2.cfg', 'r', encoding='utf8') as fptr:
     grammar = load_grammar(fptr)
 parser_old = Parser(grammar)
 parser = ProbabilisticParser(grammar)
@@ -34,12 +34,15 @@ def parse(text : str, _parser : ProbabilisticParser = parser):
     _parser.input(sq_list)
     return _parser.next_parse()
 
-from guess_tree import guess_tree
+from guess_tree import *
 from cyk_parser import *
 
 from ud_train.convert_to_ud import *
 from ud_train.process_conllu import *
 import pyconll
+
+parse('Omul *** femeia')
+guess = GuessTable(parser, NodeData({TYPE_STR:'VP'}))
 
 # if __name__ == '__main__':
 #     filename = './corpus_ud/ro_rrt-ud-dev.conllu'

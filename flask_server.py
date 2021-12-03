@@ -34,7 +34,7 @@ import prob_parser
 
 # grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # grammar = cyk_grammar_loader.load_grammar(grammar_rules)
-with open('rom_cfg_0.1.cfg', 'r', encoding='utf8') as fptr:
+with open('rom_cfg_0.2.cfg', 'r', encoding='utf8') as fptr:
     default_grammar = cyk_grammar_loader.load_grammar(fptr)
 
 
@@ -49,6 +49,7 @@ def get_client_id():
     client_id = client_count
     client_data[client_id] = {'grammar':grammar,
                               'parser':prob_parser.ProbabilisticParser(grammar),
+                              'guesser':None,
                               'unknown_words':list()}
 
     grammar_strings = [str(rule) for rule in grammar.rules]
@@ -149,21 +150,41 @@ def guess_parse():
         return_obj['error_msg'] = 'No client_id'
         return return_obj
     parser = client_data[client_id]['parser']
-    guess_parser = parser.table_copy()
-    try:
-        guess_tree.guess_tree(guess_parser, NodeData({TYPE_STR:guess_root}), add_guesses=True)
-        return_obj['data'] = guess_parser.to_jsonable()
-        return_obj['unknown'] = client_data[client_id]['unknown_words']
+    guesser = guess_tree.GuessTable(parser, NodeData({TYPE_STR:guess_root}))
+    client_data[client_id]['guesser'] = guesser
+    guesser.guess()
+    data = guesser.to_jsonable()
+    return_obj['unknown'] = client_data[client_id]['unknown_words']
+    return_obj['data'] = data
+    return json.dumps(return_obj)
+    # guess_parser = parser.table_copy()
+    # try:
+    #     guess_tree.guess_tree(guess_parser, NodeData({TYPE_STR:guess_root}), add_guesses=True)
+    #     return_obj['data'] = guess_parser.to_jsonable()
+    #     return_obj['unknown'] = client_data[client_id]['unknown_words']
+    # except Exception as e:
+    #     return_obj['error_msg'] = str(e)
+    #     return return_obj
+    # return json.dumps(return_obj)
+
+@app.route("/next-guess", methods=['POST'])
+def next_guess():
+    return_obj = {'error_msg':'', 'data':'', 'unknown':'', 'has_next':str(False)}
+    try:  # get json obj
+        json_obj = request.get_json()
     except Exception as e:
         return_obj['error_msg'] = str(e)
         return return_obj
+    client_id = json_obj.get('client_id')
+    if not client_id:
+        return_obj['error_msg'] = 'No client_id'
+        return return_obj
+    guesser = client_data[client_id]['guesser']
+    guesser.guess()
+    data = guesser.to_jsonable()
+    return_obj['unknown'] = client_data[client_id]['unknown_words']
+    return_obj['data'] = data
     return json.dumps(return_obj)
-
-
-# @app.route("/client-destroy", methods=['POST'])
-# def client_destroy():
-#     print('Client destroyed')
-#     return json.dumps('OK')
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -28,20 +28,31 @@ class NodeData(Dict[str, RValues]):
         return text
     def __repr__(self) -> str:
         return self._to_text()
-        
-
+    def intersection(self, other : 'NodeData', strict : bool = False) -> 'NodeData':
+        """Does the intersection of each RValue for each key. If strict, an inexistant key
+         in a dict corresponds to an empty RValue. If not strict, it corresponds to all values. """
+        data = NodeData({})
+        for key in set([k for k in self.keys()] + [k for k in other.keys()]):
+            (val1, val2) = (self.get(key), other.get(key))
+            (val1, val2) = map(lambda v : v if v is not None else 
+                    (RValues() if strict else RValues.all()), (val1, val2))
+            data[key] = val1.intersection(val2)
+        return data
+    def contains_empty(self) -> set:
+        empty_keys = {k for k,v in self.items() if not v}
+        return empty_keys
 # def isVar(val : RValues):
 #     if not val or len(val) != 1: return None
 #     val = list(val)
 #     if val[0].startswith(VAR_PREFIX): return val[0]
 #     return None
 
-class Variable:
-    def __init__(self, key:str, value:str):
-        self.key = key
-        self.value  = value
-    def __str__(self):
-        return '%s=@%s' % (self.key, self.value)
+# class Variable:
+#     def __init__(self, key:str, value:str):
+#         self.key = key
+#         self.value  = value
+#     def __str__(self):
+#         return '%s=@%s' % (self.key, self.value)
 
 class Constraint:
     def __init__(self, key: str, values : RValues, isStrict : bool = False, isNegated : bool = False) -> None:
@@ -167,6 +178,55 @@ class Rule:
         for node, rule_item in zip(given_list, rule_terms):
             if node is not None and not rule_item.matches(node):
                 return None, None
+        # create copies of data for solving
+        solved_parent = NodeData(given_list[0])
+        solved_children = [NodeData(child if child else {}) for child in given_list[1:]]
+        #  do variables first
+        variable_dict = defaultdict(lambda : RValues.all())
+        for node, rule_item in zip([solved_parent] + solved_children, rule_terms):
+            if not rule_item.do_variables(node, variable_dict):
+                return None, None
+        # assign variable values
+        for node, rule_item in zip([solved_parent] + solved_children, rule_terms):
+            for key, var_name in rule_item.variables.items():
+                var_name = var_name.values.get()
+                value = variable_dict[var_name]
+                if value.isAll(): continue
+                node[key] = value
+        # apply rule-item info to children
+        for node, rule_item in zip(solved_children, self.children):
+            intersection = node.intersection(rule_item.to_node())
+            if intersection.contains_empty():
+                return None, None
+            node.clear()
+            node.update(intersection)
+        # unify info from head to parent, checking that they're compatible
+        for node, rule_item in zip(solved_children, self.children):
+            if not (rule_item.annotation.get(DEPREL_STR) == HEAD_STR):
+                continue # not head
+            intersection = node.intersection(solved_parent)
+            if TYPE_STR in intersection:
+                intersection.pop(TYPE_STR)
+            if intersection.contains_empty(): # TYPE_STR can mismatch
+                return None, None
+            node.update(intersection)
+            solved_parent.update(intersection)
+            # this is iffy, but otherwise bad info propagates downstream
+            # update head child with parent info from rule
+            head_info = self.parent.to_node()
+            head_info.pop(TYPE_STR)
+            node.update(head_info)
+        # transfer data to parent from rule
+        solved_parent.update(self.parent.to_node())
+        return [solved_parent] + solved_children, [child.annotation for child in self.children]
+    
+    def solve_for_child_old(self, given_list : List[NodeData]) -> (List[NodeData], List[Dict]):
+        rule_terms = [self.parent] + self.children
+        assert len(rule_terms) == len(given_list)
+        # preliminary sanity check
+        for node, rule_item in zip(given_list, rule_terms):
+            if node is not None and not rule_item.matches(node):
+                return None, None
         given_parent = given_list[0]
         given_children = given_list[1:]
         solved_parent = NodeData(given_parent)
@@ -186,20 +246,17 @@ class Rule:
         variable_dict = defaultdict(lambda : RValues.all())
         for node, rule_item in zip([solved_parent] + solved_children, rule_terms):
             if not rule_item.do_variables(node, variable_dict):
-                # print('variable fail ' + str(variable_dict))
                 return None, None
-        # print(variable_dict)
         # assign variable values
         for node, rule_item in zip([solved_parent] + solved_children, rule_terms):
             for key, var_name in rule_item.variables.items():
                 var_name = var_name.values.get()
                 value = variable_dict[var_name]
-                # print(var_name, value)
                 if value.isAll(): continue
                 node[key] = value
-            # for var_name, value in variable_dict.items():
-            #     if value.isAll(): continue
-            #     node[var_name] = value
-
+                # # variable values may have appeared in head that need to be transferred to parent
+                # if rule_item.annotation.get(DEPREL_STR) == HEAD_STR:
+                #     if key not in solved_parent:
+                #         solved_parent[key] = value
         return [solved_parent] + solved_children, [child.annotation for child in self.children]
 

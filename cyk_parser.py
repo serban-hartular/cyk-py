@@ -71,8 +71,8 @@ class Tree:
         #     return False
         head1, arglist1 = self.get_args()
         head2, arglist2 = other.get_args()
-        return head1 == head2 and set(arglist1) == set(arglist2)
-        # return set(self.get_args()) == set(other.get_args())
+        # return head1 == head2 and set(arglist1) == set(arglist2)
+        return head1.data == head2.data and set(arglist1) == set(arglist2)
     def get_head_child(self) -> 'Tree':
         if not self.children: return None
         # head deprel

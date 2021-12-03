@@ -126,7 +126,12 @@ import SvgTree from "./SvgTree.svelte";
 	async function getGuess() {
 		let response
 		message = 'waiting for guess...'
-		await request_next('./guess-parse')
+		let path = ''
+		if(tree_library.guess_list.length == 0)
+			path = './guess-parse'
+		else
+			path = './next-guess'
+		await request_next(path)
 		.then(value =>  response = value)
 		.catch(reason => response = reason)
 		// console.log(JSON.stringify(response))
