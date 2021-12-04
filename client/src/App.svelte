@@ -258,14 +258,14 @@ import { root_to_str_rep, score2string } from "./common_utils"
 	{/if}
 
 	{#if tree_library}
-		<a name="parse_table">
+		<a class="inactive_link" name="parse_table">
 		<h3>Parse Table</h3></a>
 		<ParseTable bind:tree_library={tree_library} bind:selected_parse={selected_parse}
 			bind:selected_node={selected_node} />
 	{/if}
 
 	{#if grammar && grammar != undefined}
-	<a name="grammar">
+	<a name="grammar" class="inactive_link">
 	<h3>Grammar Editor</h3></a>
 		<Grammar bind:grammar = {grammar} bind:grammar_change={grammar_change} />
 	{/if}
@@ -313,5 +313,10 @@ import { root_to_str_rep, score2string } from "./common_utils"
 		main {
 			max-width: none;
 		}
+	}
+	.inactive_link {
+		pointer-events: none;
+		cursor: default;
+		color: black;
 	}
 </style>
