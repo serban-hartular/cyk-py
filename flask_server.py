@@ -191,5 +191,10 @@ def next_guess():
     
     return json.dumps(return_obj)
 
+import sys
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    arg_dict = {'host':'127.0.0.1', 'port':'5000'}
+    cmd_line = {arg.split('=',1)[0]:arg.split('=',1)[1] for arg in sys.argv if '=' in arg}
+    arg_dict.update(cmd_line)
+    app.run(debug=True, host=arg_dict['host'], port=int(arg_dict['port']))
