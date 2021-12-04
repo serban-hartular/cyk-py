@@ -5,7 +5,8 @@ import { score2string } from "./common_utils"
 
 export let tree_library : TreeLibrary
 export let id_list : Array<string>
-export let parse_root : Array<string>
+export let selected_parse : Array<string>
+export let selected_node : string
 
 
     function classFromId(id: string) {
@@ -69,8 +70,8 @@ $:{ tree_library;
 {:else}
     {#each id_list as id}
     <!-- <p class={classFromId(id)} on:click={() => selected = id}> -->
-        <span on:click={()=>parse_root=[id]} style="font-style: {tree_library.get(id).guess ? 'italic' : 'normal'};">
-        {#if parse_root && parse_root.includes(id)}
+        <span on:click={()=>selected_parse=[id]} style="font-style: {tree_library.get(id).guess ? 'italic' : 'normal'};">
+        {#if selected_parse && selected_parse.includes(id) || selected_node == id}
         <b>{tree_library.get(id).type},</b>
         {:else}
         {tree_library.get(id).type} 

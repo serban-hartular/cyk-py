@@ -39,8 +39,12 @@ infile = open(ud_word_dict_filename, 'rb')
 ud_word_dict = pickle.load(infile)
 infile.close()
 
+punctuation_dict = {'PUNCT': 'COMMA'}
+
 def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser.Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
+    if node_data.get(TYPE_STR)[0] in punctuation_dict: # replace punctuation
+        node_data[TYPE_STR] = [punctuation_dict[node_data[TYPE_STR][0]]]
     node_data[FORM_STR] = form
     if id is not None:
         node_data[POSITION_STR] = id
@@ -61,9 +65,9 @@ def word_2_parse_square(word : str, id : str = None, word_dict = ud_word_dict) -
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) \
         -> (List[cyk_parser.ParseSquare], List[str]):
-    # words = text.split()
-    split = re.split(r'[ \t,\.;:\\?!@#$%^&“„]', text)
-    # words = split
+    split = re.split(r'[ \t\.,;:\\?!@#$%^&“„]', text)
+    # split = re.split('\W+|(,)', text) # to do
+    # split = [s for s in split if s]
     words = []
     unknown_words = []
     for atom in split:
@@ -90,7 +94,7 @@ def separate_dashed_word(word : str, word_dict = ud_word_dict) -> List[str]:
     final_list = []
     while len(atoms) > 1:
         candidate = atoms[0] + atoms[1]
-        if candidate in word_dict:
+        if candidate.lower() in word_dict:
             final_list.append(candidate)
             atoms = atoms[2:]
         else:

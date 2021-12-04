@@ -4,7 +4,8 @@
 	import Square from "./ParseTableSquare.svelte";
 
 	export let tree_library : TreeLibrary
-	export let parse_root : Array<string>
+	export let selected_parse : Array<string>
+	export let selected_node : string
 
 </script>
 
@@ -13,7 +14,8 @@
 		<tr>
 			{#each row as square}
 			<td>
-				<Square bind:tree_library={tree_library} bind:id_list={square} bind:parse_root={parse_root}/>
+				<Square bind:tree_library={tree_library} bind:id_list={square}
+				bind:selected_parse={selected_parse} bind:selected_node={selected_node}/>
 			</td>
 			{/each}
 		</tr>

@@ -6,6 +6,7 @@ import Grammar from "./Grammar.svelte";
 import ParseTable from "./ParseTable.svelte";
 import  { TreeLibrary } from "./parse_tree";
 import SvgTree from "./SvgTree.svelte";
+import { root_to_str_rep, score2string } from "./common_utils"
 
 	let client_id : number
 	let grammar : Array<string>
@@ -14,11 +15,16 @@ import SvgTree from "./SvgTree.svelte";
 	let sentence: string
 	let message: string = ''
 	let tree_library : TreeLibrary
-	let parse_root : Array<string> = null
+	let parse_list : Array<Array<string>> = null
+	let guess_list : Array<string> = null 
+	let selected_parse : Array<string> = null
+	let selected_node : string = null
 	let guess_root : string = 'VP'
 	let unknown : string = ''
 	let has_next_parse = true
 	let has_next_guess = true
+
+	// Server-client communication
 
 		onMount(async () => {
 			console.log('Mounting')	
@@ -27,11 +33,6 @@ import SvgTree from "./SvgTree.svelte";
                 headers: {
                     'Content-Type': 'application/json',
 				}
-                // },
-                // body: JSON.stringify({
-                //     text: sentence,
-				// 	guess : guess_root
-				// })
 			})
 		.then((response) => response.json())
 		.then((data) => data as Object)
@@ -83,6 +84,8 @@ import SvgTree from "./SvgTree.svelte";
 			message = 'Parse OK'
 			unknown = response.unknown
 			has_next_parse = response.has_next_parse.toLowerCase() == 'true'
+			parse_list = tree_library.root_list
+			guess_list = tree_library.guess_list
 		} else {
 			message = 'Server error:' + response.error_msg
 		}
@@ -102,7 +105,9 @@ import SvgTree from "./SvgTree.svelte";
 			message = 'Parse OK'
 			unknown = response.unknown
 			has_next_parse = response.has_next_parse.toLowerCase() == 'true'
-			parse_root = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
+			selected_parse = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
+			parse_list = tree_library.root_list
+			guess_list = tree_library.guess_list
 		} else {
 			message = 'Server error: ' + response.error_msg
 		}
@@ -124,14 +129,14 @@ import SvgTree from "./SvgTree.svelte";
 		.then((data) => data as Object)
 	}
 
-	async function getGuess() {
+	async function getGuess(path : string) {
 		let response
 		message = 'waiting for guess...'
-		let path = ''
-		if(tree_library.guess_list.length == 0)
-			path = './guess-parse'
-		else
-			path = './next-guess'
+		// let path = ''
+		// if(tree_library.guess_list.length == 0)
+		// 	path = './guess-parse'
+		// else
+		// 	path = './next-guess'
 		await request_next(path)
 		.then(value =>  response = value)
 		.catch(reason => response = reason)
@@ -141,11 +146,23 @@ import SvgTree from "./SvgTree.svelte";
 				response.data.root_list, response.data.guess_list)
 			message = 'Guess done'
 			unknown = response.unknown
-			parse_root = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
+			selected_parse = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
 			has_next_guess = response.has_next_guess.toLowerCase() == 'true'
+			parse_list = tree_library.root_list
+			guess_list = tree_library.guess_list
+			if(guess_list.length > 0) {
+				selected_parse = [guess_list[guess_list.length-1]]
+				selected_node = selected_parse[0]
+			}
 		} else {
 			message = 'Server error: ' + response.error_msg
 		}
+	}
+
+	// GUI Management
+
+	function onParseClick(new_roots : Array<string>) {
+		selected_parse = new_roots
 	}
 
 </script>
@@ -170,33 +187,81 @@ import SvgTree from "./SvgTree.svelte";
 	</div>
 	<div class="main">
 	<h3>Enter sentence:</h3>
-	<form on:submit|preventDefault={processInput}>
-		<input type="text" size="50" bind:value={sentence}><br/>
-		
-		<button type="submit">Parse</button> {message}
-		<!-- <button class="help" on:click={()=>getModal('parse_modal').open()}>?</button> -->
-	</form>
-	{#if unknown}
-		<b>Unknown words:</b> {unknown} <br/>
-		<button on:click={getGuess} disabled={!has_next_guess}>
-			{has_next_guess ? 'Get Guess' : 'Out of guesses'}</button>
+	<!-- <form on:submit|preventDefault={processInput}> -->
+		<table>
+		<tr><td colspan="2">
+			<input type="text" size="75" bind:value={sentence} 
+				on:keypress={e => {if (e.key == "Enter") processInput()} } >
+		</td></tr>
+		<tr>
+		<td><button on:click={processInput}>Parse</button> {message}</td>
+		{#if unknown}
+		<td style="text-align: right;">
+		<button on:click={() => getGuess('./guess-parse')}>Guess Parse</button>
 			for root <input type="text" size="6" bind:value={guess_root}>
-		<br/>
-	{/if}
-	
-	{#if tree_library}
-	<button disabled={!has_next_parse} on:click={nextParse}>
-		{has_next_parse ? 'Next Parse' : 'Out of parses'}</button><br/>		
+		</td>
+		{/if}
+		</tr>
+		</table>
+		<!-- <button class="help" on:click={()=>getModal('parse_modal').open()}>?</button> -->
+	<!-- </form> -->
+
+	{#if unknown}
+	<b>Unknown words:</b> {unknown} <br/>
 	{/if}
 
+	{#if parse_list}
+		<!-- Table of possible parses -->
+		<table><tr>
+			<td class="parses">	<button disabled={!has_next_parse} style="width:min-content" on:click={nextParse}>
+				{has_next_parse ? 'Next Parse' : 'Parses exhausted'}</button>	
+			</td>
+			{#each parse_list as root}
+				<td class="parses" on:click={()=>onParseClick(root)}>
+					{#if root == selected_parse}
+						<b>{root_to_str_rep(root, tree_library)}</b>	
+					{:else}
+					{root_to_str_rep(root, tree_library)}
+					{/if}
+					<br>
+					({score2string(root, tree_library)})
+				</td>
+			{/each}
+		</tr></table>
+	{/if}
+
+	{#if guess_list && guess_list.length > 0}
+		<table><tr>
+			<td class="parses">
+				<button disabled={!has_next_guess} style="width:min-content" 
+					on:click={() => getGuess('./next-guess')}>
+				{has_next_guess ? 'Next Guess' : 'Out of guesses'}</button>
+			</td>
+			{#each guess_list as guess}
+				<td on:click={()=>onParseClick([guess])} class="parses">
+					{#if selected_parse.includes(guess)}
+						<b>{root_to_str_rep([guess], tree_library)}</b>	
+					{:else}
+					{root_to_str_rep([guess], tree_library)}
+					{/if}
+					<br>
+					({score2string([guess], tree_library)})
+				</td>
+			{/each}
+		</tr></table>
+	{/if}
+
+
 	{#if tree_library }
-		<SvgTree tree_library={tree_library} bind:parse_root={parse_root} />
+		<SvgTree tree_library={tree_library} bind:selected_parse={selected_parse} 
+			bind:selected_node={selected_node} />
 	{/if}
 
 	{#if tree_library}
 		<a name="parse_table">
 		<h3>Parse Table</h3></a>
-		<ParseTable bind:tree_library={tree_library} bind:parse_root={parse_root} />
+		<ParseTable bind:tree_library={tree_library} bind:selected_parse={selected_parse}
+			bind:selected_node={selected_node} />
 	{/if}
 
 	{#if grammar && grammar != undefined}
@@ -214,6 +279,10 @@ import SvgTree from "./SvgTree.svelte";
 		padding: 1em;
 		max-width: 240px;
 		margin: 0 auto;
+	}
+
+	td.parses {
+		padding-left: 10px;
 	}
 	
 	.side {
