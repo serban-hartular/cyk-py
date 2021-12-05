@@ -23,6 +23,8 @@ import { root_to_str_rep, score2string } from "./common_utils"
 	let unknown : string = ''
 	let has_next_parse = true
 	let has_next_guess = true
+	let no_new_parses = false;
+	let no_new_guesses = false;
 
 	// Server-client communication
 
@@ -94,6 +96,7 @@ import { root_to_str_rep, score2string } from "./common_utils"
 
 	async function nextParse() {
 		let response
+		let old_list_len = parse_list.length
 		message = 'waiting for parse...'
 		await request_next('./next-parse')
 		.then(value =>  response = value)
@@ -108,6 +111,7 @@ import { root_to_str_rep, score2string } from "./common_utils"
 			selected_parse = tree_library.root_list[tree_library.root_list.length-1]//parse_list[0]
 			parse_list = tree_library.root_list
 			guess_list = tree_library.guess_list
+			no_new_parses = (parse_list.length <= old_list_len)
 		} else {
 			message = 'Server error: ' + response.error_msg
 		}
@@ -131,6 +135,7 @@ import { root_to_str_rep, score2string } from "./common_utils"
 
 	async function getGuess(path : string) {
 		let response
+		let old_list_len = guess_list.length
 		message = 'waiting for guess...'
 		// let path = ''
 		// if(tree_library.guess_list.length == 0)
@@ -154,6 +159,7 @@ import { root_to_str_rep, score2string } from "./common_utils"
 				selected_parse = [guess_list[guess_list.length-1]]
 				selected_node = selected_parse[0]
 			}
+			no_new_guesses = (guess_list.length <= old_list_len)
 		} else {
 			message = 'Server error: ' + response.error_msg
 		}
@@ -214,7 +220,7 @@ import { root_to_str_rep, score2string } from "./common_utils"
 		<!-- Table of possible parses -->
 		<table><tr>
 			<td class="parses">	<button disabled={!has_next_parse} style="width:min-content" on:click={nextParse}>
-				{has_next_parse ? 'Next Parse' : 'Parses exhausted'}</button>	
+				{!has_next_parse ? 'Parses exhausted' : (no_new_parses ? 'Try again' : 'Next parse')}</button>	
 			</td>
 			{#each parse_list as root}
 				<td class="parses" on:click={()=>onParseClick(root)}>
@@ -235,7 +241,8 @@ import { root_to_str_rep, score2string } from "./common_utils"
 			<td class="parses">
 				<button disabled={!has_next_guess} style="width:min-content" 
 					on:click={() => getGuess('./next-guess')}>
-				{has_next_guess ? 'Next Guess' : 'Out of guesses'}</button>
+				{!has_next_guess ? 'Out of guesses' : (no_new_guesses ? 'Try again' : 'Next Guess')}
+				</button>
 			</td>
 			{#each guess_list as guess}
 				<td on:click={()=>onParseClick([guess])} class="parses">
