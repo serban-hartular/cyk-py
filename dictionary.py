@@ -39,6 +39,8 @@ infile = open(ud_word_dict_filename, 'rb')
 ud_word_dict = pickle.load(infile)
 infile.close()
 
+ud_word_dict['de'].remove(ud_word_dict['de'][1]) # remove 'foreign' de
+
 punctuation_dict = {'PUNCT': 'COMMA'}
 
 def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser.Tree:

@@ -42,7 +42,7 @@ constraint  : VALUE EQUALS values
 values :   VALUE
        |   values "," VALUE
 
-VALUE : /[_@a-zA-Z0-9ăîâșț]+/
+VALUE : /[_@a-zA-Z0-9ăîâșțȘȚĂÎÂ]+/
 EQUALS : "="
 STRICT_EQ : "=="
 INEQ : "!="

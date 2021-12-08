@@ -1,34 +1,11 @@
 import math
 
+from cyk_grammar import Grammar
 from rule import Rule, NodeData, DEPREL_STR, HEAD_STR
 from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
-class Grammar:
-    def __init__(self, rules : List[Rule]):
-        self.rules = rules
-        self.singletons = [r for r in rules if len(r.children) == 1]
-        self.doubletons = [r for r in rules if len(r.children) == 2]
-        others = [r for r in rules if len(r.children) != 1 and len(r.children) != 2]
-        if others:
-            raise Exception("Rules can only have 1 or 2 children: '%s'" % others[0].to_text())
-        self.nonterminals = set([rule.parent.constraints[TYPE_STR].values.get() for rule in self.rules])
-        self.terminals = set([ruleitem.constraints[TYPE_STR].values.get() for rule in rules \
-                              for ruleitem in ([rule.parent] + rule.children) \
-                              if ruleitem.constraints[TYPE_STR].values.get() not in self.nonterminals])
-        self.assign_scores()
-    def assign_scores(self):
-        for nonterm in self.nonterminals:
-            rules = [rule for rule in self.rules if rule.parent.constraints[TYPE_STR].values.get() == nonterm]
-            n = 0
-            for rule in rules:
-                if len(rule.children) == 1: # this is kind of doubtful
-                    rule.score = 1.00001
-                    continue
-                rule.score = 1 / (n+1)
-                n += 1
-    def is_known(self, type_str : str) -> bool:
-        return type_str in self.terminals.union(self.nonterminals)
+
 class Tree:
     def __init__(self, data : NodeData, rule : Rule = None, children : List['Tree'] = None, children_annot : List[Dict] = None, guess = False):
         self.data = data
@@ -86,7 +63,7 @@ class Tree:
         # return first child
         return self.children[0]
     def get_args(self) -> ('Tree', List[tuple]):
-        """ Returns the children attached to the tree and the rules they were attached by
+        """ Returns the children attached to the tree and the _rules they were attached by
         for nodes of the same type with the same lemma beneath this tree
         """
         node = self
@@ -183,7 +160,7 @@ class Parser:
         i = 0 # index of node in square
         while(i < len(square)):
             node = square[i]
-            for rule in self.grammar.singletons:
+            for rule in self.grammar.get_rules((None,)):
                 (data, annotations) = rule.apply([node.data])
                 if not data: continue
                 new_node = Tree(data, rule, [node], annotations)
@@ -201,7 +178,7 @@ class Parser:
             child_sq1 = self.table[r1][c1]
             child_sq2 = self.table[r2][c2]
             for node1, node2 in [(n1, n2) for n1 in child_sq1 for n2 in child_sq2]: 
-                for rule in self.grammar.doubletons:
+                for rule in self.grammar.get_rules((None, None)):
                     (data, annotations) = rule.apply([node1.data, node2.data])
                     if not data: continue # rule could not be applied
                     new_node = Tree(data, rule, [node1, node2], annotations)
@@ -228,7 +205,7 @@ class Parser:
     def get_parses(self, position : tuple = None, no_kids = True) -> List[List[Tree]]:
         """ The no_kids flag means children residing in the same square won't be returned.
         This dramatically reduces the number of incomplete parses. (Another consequence of 
-        allowing singleton rules.)
+        allowing singleton _rules.)
         """
         (row, col) = position if position else (len(self.table)-1, 0)
         if self.cell(row, col): # done!

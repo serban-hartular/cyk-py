@@ -34,7 +34,9 @@ import prob_parser
 
 # grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # grammar = cyk_grammar_loader.load_grammar(grammar_rules)
+
 with open('rom_cfg_0.2.cfg', 'r', encoding='utf8') as fptr:
+# with open('./ro_locut.cfg', 'r', encoding='utf8') as fptr:
     default_grammar = cyk_grammar_loader.load_grammar(fptr)
 
 
@@ -52,7 +54,7 @@ def get_client_id():
                               'guesser':None,
                               'unknown_words':list()}
 
-    grammar_strings = [str(rule) for rule in grammar.rules]
+    grammar_strings = [str(rule) for rule in grammar._rules]
     return json.dumps({'client_id': client_id, 'grammar':grammar_strings})
 
 
@@ -131,6 +133,9 @@ def next_parse():
     return_obj['unknown'] = client_data[client_id]['unknown_words']
     return json.dumps(return_obj)
 
+import lark
+import rule_io
+
 @app.route("/guess-parse", methods=['POST'])
 def guess_parse():
     # global parser
@@ -146,12 +151,19 @@ def guess_parse():
     if not guess_root:
         return_obj['error_msg'] = 'No guess root provided'
         return return_obj
+    try:
+        pp = lark.Lark(rule_io.grammar, start='item')
+        tree = pp.parse('VP[a=2]')
+        guess_data = rule_io.get_rule_item(tree).to_node()
+    except Exception as e:
+        return_obj['error_msg'] = 'guess string error: ' + str(e)
+        return return_obj
     client_id = json_obj.get('client_id')
     if not client_id:
         return_obj['error_msg'] = 'No client_id'
         return return_obj
     parser = client_data[client_id]['parser']
-    guesser = guess_tree.GuessTable(parser, NodeData({TYPE_STR:guess_root}))
+    guesser = guess_tree.GuessTable(parser, guess_data) #NodeData({TYPE_STR:guess_root}))
     client_data[client_id]['guesser'] = guesser
     if not guesser.guess():
         return_obj['has_next_guess'] = str(False)

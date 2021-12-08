@@ -1,6 +1,6 @@
 
 from rule_io import parse_rule
-from cyk_parser import Grammar
+from cyk_grammar import Grammar
 from rule import Constraint, VAR_PREFIX, Rule
 from rvalues import RValues
 
@@ -38,13 +38,13 @@ def load_grammar(lines):
                 print('Bad score value %s at line %d' % (line[1], line_count))
                 return None
             if not rule_list:
-                print('Score directive before any rules at line %d, ignoring' % line_count)
+                print('Score directive before any _rules at line %d, ignoring' % line_count)
                 continue
             last = rule_list[-1]
             last.score = score
         elif line.startswith('%reverse'):
             if not rule_list:
-                print('Reverse directive before any rules at line %d, ignoring' % line_count)
+                print('Reverse directive before any _rules at line %d, ignoring' % line_count)
                 continue
             last = rule_list[-1]
             if len(last.children) < 2:

@@ -1,5 +1,6 @@
 from dictionary import text_2_square_list, word_2_parse_square
-from cyk_parser import Parser, Grammar
+from cyk_parser import Parser
+from cyk_grammar import Grammar
 from cyk_grammar_loader import load_grammar
 
 import rom_cfg_nom
@@ -41,17 +42,28 @@ from ud_train.convert_to_ud import *
 from ud_train.process_conllu import *
 import pyconll
 
-parse('Omul *** femeia')
-guess = GuessTable(parser, NodeData({TYPE_STR:'VP'}))
+parse('Un om')
 
-# if __name__ == '__main__':
-#     filename = './corpus_ud/ro_rrt-ud-dev.conllu'
+# incomplete = ['dev-692', 'dev-312', 'dev-450', 'dev-31', 'dev-27', 'dev-37', 'dev-36']
+# dicendi = ['dev-34', 'dev-47']
+# long = ['dev-12', 'dev-8', 'dev-502']
+# bad_tag = ['dev-299']
+# modal = ['dev-443']
+# npe = ['dev-452']
+# locution_order = ['dev-507']
 # 
+# if __name__ == '__main__':
+#     # filename = './corpus_ud/ro_rrt-ud-dev.conllu'
+#     filename = './test.conll'
+#     
 #     conll = pyconll.load_from_file(filename)
 #     # sort by shortest
 #     sentence_list = [s for s in conll]
 #     sentence_list.sort(key=lambda s: len(s))
 #     for sentence in sentence_list:
+#         print(sentence.id, sentence.text)
+#         if sentence.id in (incomplete + dicendi + long + bad_tag + modal + npe + locution_order):
+#             continue
 #         # get a parsed sentence
 #         ud_tokens = elim_upos_from_conllu(sentence, ['PUNCT', 'INTJ'])
 #         # feed tokens to dictionary for sq_list
@@ -60,12 +72,16 @@ guess = GuessTable(parser, NodeData({TYPE_STR:'VP'}))
 #         # look for parse that matches
 #         matching_parse = None
 #         while parser.next_parse() > 0:
+#             if not parser.root():
+#                 continue
 #             tree = parser.root()[-1]
 #             node_list = UD_Node.token_list(to_ud(tree)[0])
 #             if not UD_Node.differences(node_list, ud_tokens):
 #                 matching_parse = tree
 #                 break
 #         if matching_parse is None: # didn't find parse
-#             print("Couldn't find parse for " + sentence.text)
+#             print("Couldn't find parse for {}: '{}'".format(sentence.id, sentence.text))
 #             break
-#  
+# 
+# r = parser.root()[0]
+# nl = UD_Node.token_list(to_ud(r)[0])

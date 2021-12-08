@@ -47,7 +47,7 @@ def greedy_guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None
         for existing in parser.cell(existing_pos):
             candidate_kids = [None, existing.data] if missing_index == 1 else [existing.data, None]
             # print(candidate_kids)
-            for rule in parser.grammar.doubletons:
+            for rule in parser.grammar._doubletons:
                 nodes, annot = rule.solve_for_child([guess_root] + candidate_kids)
                 if not nodes: continue # could not apply rule
                 # print(rule, nodes)
@@ -63,9 +63,9 @@ def greedy_guess_tree(parser : Parser, guess_root : NodeData, pos : tuple = None
                 new_parents = [Tree(nodes[0], rule, [kid, existing] if missing_index == 1 else [existing, kid], 
                                     annot, True) for kid in kids_guesses]
                 guess_list += new_parents
-    # try singletons
+    # try _singletons
     # print('Singleton: ', guess_root, pos)
-    for rule in parser.grammar.singletons:
+    for rule in parser.grammar._singletons:
         nodes, annot = rule.solve_for_child([guess_root, None])
         if not nodes: continue
         (root, child_data) = nodes
@@ -173,28 +173,33 @@ class GuessTable(prob_parser.ProbabilisticParser):
                 return [node]
             return []
 
-        for rule in self.grammar.doubletons:
-            if rule in [t.rule for t in self.table[pos[0]][pos[1]] ]:
-                continue # we already have a node that applied this rule
-            for((r1, c1), (r2, c2)) in self.generate_child_squares(pos[0], pos[1]):
-                child_sq1 = self.table[r1][c1]
-                for existing in [t for t in child_sq1 if not t.guess]:
+        for((r1, c1), (r2, c2)) in self.generate_child_squares(pos[0], pos[1]):
+            child_sq1 = self.table[r1][c1]
+            for existing in [t for t in child_sq1 if not t.guess]:
+                for rule in self.grammar.get_rules(
+                        [str(guess_data[TYPE_STR]),str(existing.data[TYPE_STR]), None]):#self.grammar._doubletons:
+                    if rule in [t.rule for t in self.table[pos[0]][pos[1]]]:
+                        continue  # we already have a node that applied this rule
                     nodes, annot = rule.solve_for_child([guess_data, existing.data, None])
                     if nodes:
                         new_parent = GuessTree(pos, nodes[0], rule, [existing, None], annot)
                         new_parent.unknown_child_pos = (r2, c2)
                         new_parent.unknown_child_data = nodes[2]
                         generated_nodes.append(new_parent)
-                child_sq2 = self.table[r2][c2]
-                for existing in [t for t in child_sq2 if not t.guess]:
+            child_sq2 = self.table[r2][c2]
+            for existing in [t for t in child_sq2 if not t.guess]:
+                for rule in self.grammar.get_rules(
+                        [str(guess_data[TYPE_STR]), None, str(existing.data[TYPE_STR])]): #self.grammar._doubletons:
+                    if rule in [t.rule for t in self.table[pos[0]][pos[1]]]:
+                        continue  # we already have a node that applied this rule
                     nodes, annot = rule.solve_for_child([guess_data, None, existing.data])
                     if nodes:
                         new_parent = GuessTree(pos, nodes[0], rule, [None, existing], annot)
                         new_parent.unknown_child_pos = (r1, c1)
                         new_parent.unknown_child_data = nodes[1]
                         generated_nodes.append(new_parent)
-        # # now do singleton rules
-        for rule in self.grammar.singletons:
+        # # now do singleton _rules
+        for rule in self.grammar._singletons:
             nodes, annot = rule.solve_for_child([guess_data, None])
             if not nodes: continue
             new_parent = GuessTree(pos, nodes[0], rule, [None], annot)

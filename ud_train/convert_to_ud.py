@@ -1,5 +1,6 @@
 
 
+sub_function_words = ['AdvSpec']
 function_words = ['ADP', 'SCONJ', 'CCONJ', 'AUX', 'NUM', 'DET', 'PART']
 content_words = ['NOUN', 'VERB', 'ADJ', 'ADV', 'PRON']
 multiword_heads = ['Prep', 'SConj', 'BARE_PP', 'CA_SI']
@@ -15,6 +16,7 @@ class UD_Node:
         self.id = str(str(self.data[POSITION_STR]))
         self.head = '-1'
         self.deprel = ''
+        # self.position = data['position'].get()
         self.children : List[UD_Node] = []
     def traverse(self):
         yield self
@@ -22,7 +24,9 @@ class UD_Node:
             for node in child.traverse():
                 yield node
     def __str__(self):
-        return str(self.data)
+        d = NodeData(self.data)
+        d['head'] = self.head
+        return str(d)
     def __repr__(self):
         return str(self)
     def set_heads(self, head='0'):
@@ -36,10 +40,11 @@ class UD_Node:
         nodes.sort(key=lambda n : int(n.id))
         return nodes
     @staticmethod
-    def differences(nodes : List['UD_Node'], conllu_nodes : list()) -> tuple:
+    def differences(nodes : List['UD_Node'], conllu_nodes : list) -> tuple:
+        # nodes.sort(key = lambda n : int(n.id))
         for node, conll in zip(nodes, conllu_nodes):
             if node.id != conll.id:
-                print('Error! Different node ids for {}, {}'.format(str(node), str(conll)))
+                print('Error! Different node ids for {}, {}'.format(str(node), conll.id))
                 return (node, node.id, conll.id)
             if node.head != conll.head:
                 return (node, node.head, conll.head)
@@ -47,7 +52,7 @@ class UD_Node:
 def are_function(ud_nodes : List[UD_Node]) -> bool:
     if len(ud_nodes) > 1:
         return True
-    if ud_nodes[0].upos in function_words:
+    if ud_nodes[0].upos in (function_words + sub_function_words):
         return True
     return False
 
@@ -55,10 +60,25 @@ def to_ud(tree : Tree) -> List[UD_Node]:
     if not tree.children:
         return [UD_Node(tree.data)]
     if len(tree.children) == 1:
+        if tree.type in sub_function_words:
+            # print('sub funct')
+            ud_node = UD_Node(tree.children[0].data)
+            ud_node.upos = tree.type
+            return [ud_node]
         return to_ud(tree.children[0])
     children = [to_ud(child) for child in tree.children]
     if are_function(children[0]) and are_function(children[1]):
         # we have two function node trees, they will all be subordinate to one content word node
+        # unless one is a sub_function word
+        if children[0][0].upos in sub_function_words:
+            parent = children[1][0]
+            parent.children += children[0]
+            return [parent]
+        if children[1][0].upos in sub_function_words:
+            parent = children[0][0]
+            parent.children += children[1]
+            return [parent]
+
         return children[0] + children[1]
 
     if are_function(children[0]) and not are_function(children[1]):
@@ -74,24 +94,40 @@ def to_ud(tree : Tree) -> List[UD_Node]:
     # we have two content nodes.
     # if it's a RP (relative phrase), the verb is the head in UD
     if tree.type == 'RP':
-        print('RP')
         parent = children[1][0]
         parent.children += children[0]
         return [parent]
     # look for copulative or passive 'fi'
     if tree.type == 'VP' and (str(tree.data.get('cop')) == 'T' or str(tree.data.get('pass')) == 'T'):
-        deprel = 'cop' if (str(tree.data.get('cop'))) == 'T' else 'aux:pass'
         # look for 'fi'
-        cop = 0 if str(tree.children[0].data[LEMMA_STR]) == 'fi' else 1
-        main = 1 if cop == 0 else 0
-        parent = children[main][0]
-        operator = children[cop][0]
-        operator.deprel = deprel
-        # need to make copula/passive operator flat. all its children become children of parent
-        operator_kids = operator.children
-        operator.children = []
-        parent.children.extend([operator] + operator_kids)
-        return [parent]
+        copula = [child for child in children if child[0].data[LEMMA_STR].get() == 'fi']
+        if copula:
+            # cop = 0 if str(tree.children[0].data[LEMMA_STR]) == 'fi' else 1
+            cop = children.index(copula[0])
+            main = 1 if cop == 0 else 0
+            operator = children[cop][0]
+            operator.deprel = 'cop' if (str(tree.data.get('cop'))) == 'T' else 'auxpass'
+            # need to make copula/passive operator flat. all its children become children of parent
+            operator_kids = operator.children
+            operator.children = []
+            parent = children[main][0]
+            parent.deprel = tree.children_annot[main].get(DEPREL_STR) if tree.children_annot[main].get(DEPREL_STR) else ''
+            # if parent is the npred or the pass, it's the head; otherwise, they are brothers 
+            if parent.deprel in ['npred', 'pass']:
+                parent.children.extend([operator] + operator_kids)
+                parent.deprel = HEAD_STR
+                return [parent]
+            else:
+                return [parent] + [operator] + operator_kids
+        else: # look for npred or pass to use as head
+            parent = [a[0] for a in children if a[0].deprel == HEAD_STR]
+            if not parent: # pass them on up...
+                raise Exception('no parent for npred/pass')
+            parent = parent[0]
+            for child in children:
+                if child[0] != parent:
+                    parent.children.extend(child)
+            return [parent]
     # look for head
     for annot, i in zip(tree.children_annot, range(0, len(tree.children_annot))):
         if annot.get(DEPREL_STR) == HEAD_STR:
@@ -105,6 +141,10 @@ def to_ud(tree : Tree) -> List[UD_Node]:
             return [parent]
     # look for one with same lemma
     for child, i in zip(tree.children, range(0, len(tree.children))):
+        if LEMMA_STR not in child.data or LEMMA_STR not in tree.data:
+            print(tree.data)
+            print(child.data)
+            exit(-1)
         if child.data[LEMMA_STR].get() == tree.data[LEMMA_STR].get():
             # this is the head
             o = 0 if i == 1 else 1

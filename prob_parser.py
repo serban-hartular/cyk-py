@@ -1,4 +1,3 @@
-
 from cyk_parser import *
 
 class ProbabilisticParser(Parser):
@@ -20,13 +19,13 @@ class ProbabilisticParser(Parser):
         nodes_added = 0
         for row in range(0, self.N):
             for col in range(0, len(self.table[row])):
-                # first do doubletons
+                # first do _doubletons
                 possible_trees = ParseSquare([])
                 for ((r1, c1), (r2, c2)) in Parser.generate_child_squares(row, col):
                     child_sq1 = self.table[r1][c1]
                     child_sq2 = self.table[r2][c2]
                     for node1, node2 in [(n1, n2) for n1 in child_sq1 for n2 in child_sq2]:
-                        for rule in self.grammar.doubletons:
+                        for rule in self.grammar.get_rules((None, str(node1.data[TYPE_STR]), str(node2.data[TYPE_STR]))): #self.grammar._doubletons:
                             (data, annotations) = rule.apply([node1.data, node2.data])
                             if not data: continue  # rule could not be applied
                             new_node = Tree(data, rule, [node1, node2], annotations)
@@ -39,11 +38,11 @@ class ProbabilisticParser(Parser):
                     possible_trees.sort(key=lambda t : t.nscore)
                     self.table[row][col].append(possible_trees[-1])
                     nodes_added += 1
-                # do singletons
+                # do _singletons
                 i = 0
                 while i < len(self.table[row][col]):
                     node = self.table[row][col][i]
-                    for rule in self.grammar.singletons:
+                    for rule in self.grammar.get_rules((None, str(node.data[TYPE_STR]))):#self.grammar._singletons:
                         (data, annotations) = rule.apply([node.data])
                         if not data: continue
                         new_node = Tree(data, rule, [node], annotations)
