@@ -1,10 +1,13 @@
-# sent_id = dev-713
-# text = parte de-a lungul Evului Mediu a Regatului Ungariei
-3	parte	parte	NOUN	Ncfsrn	Case=Acc,Nom|Definite=Ind|Gender=Fem|Number=Sing	0	root	_	_
-4	de-a	de-a	ADP	Spsa	AdpType=Prep|Case=Acc	6	case	_	_
-5	lungul	lung	NOUN	Ncmsry	Case=Acc,Nom|Definite=Def|Gender=Masc|Number=Sing	4	fixed	_	_
-6	Evului	ev	NOUN	Ncmsoy	Case=Dat,Gen|Definite=Def|Gender=Masc|Number=Sing	3	nmod	_	_
-7	Mediu	mediu	ADJ	Afpms-n	Definite=Ind|Degree=Pos|Gender=Masc|Number=Sing	6	amod	_	_
-8	a	al	DET	Tsfs	Gender=Fem|Number=Sing|Poss=Yes|PronType=Prs	9	det	_	_
-9	Regatului	regat	NOUN	Ncmsoy	Case=Dat,Gen|Definite=Def|Gender=Masc|Number=Sing	3	nmod	_	_
-10	Ungariei	Ungaria	PROPN	Npfsoy	Case=Dat,Gen|Definite=Def|Gender=Fem|Number=Sing	9	nmod	_	_
+# sent_id = dev-73
+# text = Gripa aviară a provocat primul deces în rândul populației thailandeze.
+1	Gripa	gripă	NOUN	Ncfsry	Case=Acc,Nom|Definite=Def|Gender=Fem|Number=Sing	4	nsubj	_	_
+2	aviară	aviară	ADJ	Afpfsrn	Case=Acc,Nom|Definite=Ind|Degree=Pos|Gender=Fem|Number=Sing	1	amod	_	_
+3	a	avea	AUX	Va--3s	Number=Sing|Person=3	4	aux	_	_
+4	provocat	provoca	VERB	Vmp--sm	Gender=Masc|Number=Sing|VerbForm=Part	0	root	_	_
+5	primul	prim	NUM	Momsrly	Case=Acc,Nom|Definite=Def|Gender=Masc|Number=Sing|NumForm=Word|NumType=Ord	6	nummod	_	_
+6	deces	deces	NOUN	Ncms-n	Definite=Ind|Gender=Masc|Number=Sing	4	obj	_	_
+7	în	în	ADP	Spsa	AdpType=Prep|Case=Acc	8	case	_	_
+8	rândul	rând	NOUN	Ncmsry	Case=Acc,Nom|Definite=Def|Gender=Masc|Number=Sing	4	advcl	_	_
+9	populației	populație	NOUN	Ncfsoy	Case=Dat,Gen|Definite=Def|Gender=Fem|Number=Sing	8	nmod	_	_
+10	thailandeze	thailandez	ADJ	Afpfson	Case=Dat,Gen|Definite=Ind|Degree=Pos|Gender=Fem|Number=Sing	9	amod	_	SpaceAfter=No
+11	.	.	PUNCT	PERIOD	_	4	punct	_	_

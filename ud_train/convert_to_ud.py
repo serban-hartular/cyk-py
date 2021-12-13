@@ -10,6 +10,12 @@ from cyk_parser import *
 from rule_io import POSITION_STR, TYPE_STR, FORM_STR
 
 class UD_Node:
+    deprel_dict = {'dobj':['obj', 'xcomp', 'ccomp'],
+                   'subj':['nsubj', 'csubj'],
+                   'iobj':['iobj'],
+                   'ntmod':['nmod:tmod'],
+                   'predsup':['xcomp']
+                   }
     def __init__(self, data : NodeData):
         self.data = data
         self.upos = str(self.data[TYPE_STR])
@@ -26,6 +32,7 @@ class UD_Node:
     def __str__(self):
         d = NodeData(self.data)
         d['head'] = self.head
+        d[DEPREL_STR] = self.deprel
         return str(d)
     def __repr__(self):
         return str(self)
@@ -48,7 +55,9 @@ class UD_Node:
                 return (node, node.id, conll.id)
             if node.head != conll.head:
                 return (node, node.head, conll.head)
-        return []
+            if node.deprel in UD_Node.deprel_dict and conll.deprel not in UD_Node.deprel_dict[node.deprel]:
+                return (node, node.deprel, conll.deprel)
+        return tuple() # ie, false
 def are_function(ud_nodes : List[UD_Node]) -> bool:
     if len(ud_nodes) > 1:
         return True
@@ -67,6 +76,17 @@ def to_ud(tree : Tree) -> List[UD_Node]:
             return [ud_node]
         return to_ud(tree.children[0])
     children = [to_ud(child) for child in tree.children]
+    # if relation is fixed, fixed is child, make flat
+    fixed = [f for f in tree.children_annot if f.get(DEPREL_STR) == 'fixed']
+    if fixed:
+        fixed = tree.children_annot.index(fixed[0])
+        parent = 0 if fixed == 1 else 1
+        fixed = children[fixed][0]
+        fixed_kids = fixed.children
+        fixed.children = []
+        parent = children[parent][0]
+        parent.children.extend([fixed] + fixed_kids)
+        return [parent]
     if are_function(children[0]) and are_function(children[1]):
         # we have two function node trees, they will all be subordinate to one content word node
         # unless one is a sub_function word

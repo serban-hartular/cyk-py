@@ -3,6 +3,8 @@ from cyk_parser import Parser
 from cyk_grammar import Grammar
 import cyk_grammar_loader
 
+import time
+
 import rom_cfg_nom
 import rom_cfg_verb
 from prob_parser import ProbabilisticParser
@@ -43,6 +45,8 @@ long_bad = ['dev-471']
 good_parses = []
 bad_parses = []
 
+stop_at = 'dev-356'
+
 import cyk_rule_counter
 
 counter = cyk_rule_counter.RuleCounter()
@@ -56,7 +60,9 @@ if __name__ == '__main__':
     sentence_list = [s for s in conll]
     sentence_list.sort(key=lambda s: len(s))
     for sentence in sentence_list:
-        if sentence.id in (incomplete + dicendi + long + bad_tag + modal + npe + list_item + long_bad):
+        if sentence.id == stop_at:
+            break
+        if sentence.id in (incomplete + dicendi + bad_tag + modal + npe + list_item + long_bad):
             continue
         print(sentence.id, sentence.text)
         # get a parsed sentence
@@ -66,13 +72,10 @@ if __name__ == '__main__':
         parser.input(sq_list)
         # look for parse that matches
         matching_parse = None
-        try_count = 0
+        tic = time.perf_counter()
+        toc = tic
         while parser.next_parse() > 0:
-            try_count += 1
-            if try_count > 50:
-                print(try_count)
-            if try_count > 101:
-                break
+            toc = time.perf_counter()
             if not parser.root():
                 continue
             tree = parser.root()[-1]
@@ -80,7 +83,9 @@ if __name__ == '__main__':
             if not UD_Node.differences(node_list, ud_tokens):
                 matching_parse = tree
                 break
-        print('Count = ' + str(try_count))
+            if toc - tic > 75:  # 90 secs
+                break
+        print('dt = ' + str(toc-tic))
         if matching_parse is None: # didn't find parse
             print("Couldn't find parse for {}: '{}'".format(sentence.id, sentence.text))
             bad_parses.append(sentence.id)

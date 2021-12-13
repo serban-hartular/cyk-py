@@ -2,6 +2,7 @@ from flask import Flask, send_from_directory
 from flask import request
 import json
 
+import cyk_grammar
 from rule import NodeData
 from rule_io import TYPE_STR
 
@@ -35,9 +36,16 @@ import prob_parser
 # grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # grammar = cyk_grammar_loader.load_grammar(grammar_rules)
 
-with open('rom_cfg_0.2.cfg', 'r', encoding='utf8') as fptr:
+# with open('rom_cfg_0.3.cfg', 'r', encoding='utf8') as fptr:
+# # with open('./ro_locut.cfg', 'r', encoding='utf8') as fptr:
+#     default_grammar = cyk_grammar_loader.load_grammar(fptr)
+
+grammar_lines = []
 # with open('./ro_locut.cfg', 'r', encoding='utf8') as fptr:
-    default_grammar = cyk_grammar_loader.load_grammar(fptr)
+#     grammar_lines += fptr.readlines()
+with open('rom_cfg_0.3.cfg', 'r', encoding='utf8') as fptr:
+    grammar_lines += fptr.readlines()
+default_grammar = cyk_grammar.Grammar(cyk_grammar_loader.load_rules(grammar_lines))
 
 
 client_count = 0

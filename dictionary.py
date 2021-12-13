@@ -1,3 +1,4 @@
+import string
 from collections import defaultdict
 
 
@@ -39,14 +40,19 @@ infile = open(ud_word_dict_filename, 'rb')
 ud_word_dict = pickle.load(infile)
 infile.close()
 
+# changes to dict
 ud_word_dict['de'].remove(ud_word_dict['de'][1]) # remove 'foreign' de
-
-punctuation_dict = {'PUNCT': 'COMMA'}
-
+ud_word_dict['iar'].append({'count':500, 'data':{TYPE_STR:'CCONJ', FORM_STR:'iar', LEMMA_STR:'iar'}})
+ud_word_dict['excretă'].append( # excreta prezent
+    {'data': {'Mood': {'Ind'}, 'Person': {'3'}, 'Tense': {'Pres'}, 'VerbForm': {'Fin'}, 'type': {'VERB'}, 'form': {'excretă'}, 'lemma': {'excreta'}}, 'count': 5}
+)
+ud_word_dict['cotidian'].append( # cotidian adverb
+    {'data': {'type': {'ADV'}, 'form': {'cotidian'}, 'lemma': {'cotidian'}}, 'count': 1}
+)
 def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser.Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
-    if node_data.get(TYPE_STR)[0] in punctuation_dict: # replace punctuation
-        node_data[TYPE_STR] = [punctuation_dict[node_data[TYPE_STR][0]]]
+    # if node_data.get(TYPE_STR)[0] in punctuation_dict: # replace punctuation
+    #     node_data[TYPE_STR] = [punctuation_dict[node_data[TYPE_STR][0]]]
     node_data[FORM_STR] = form
     if id is not None:
         node_data[POSITION_STR] = id
@@ -67,17 +73,18 @@ def word_2_parse_square(word : str, id : str = None, word_dict = ud_word_dict) -
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) \
         -> (List[cyk_parser.ParseSquare], List[str]):
-    split = re.split(r'[ \t\.,;:\\?!@#$%^&“„]', text)
+    # split = re.split(r'[ \t\.,;:\\?!@#$%^&“„]', text)
     # split = re.split('\W+|(,)', text) # to do
     # split = [s for s in split if s]
-    words = []
+    # words = []
+    words = text_to_atoms(text, word_dict)
     unknown_words = []
-    for atom in split:
-        if not atom: continue
-        if '-' in atom:
-            words += separate_dashed_word(atom, word_dict)
-        else:
-            words.append(atom)
+    # for atom in split:
+    #     if not atom: continue
+    #     if '-' in atom:
+    #         words += separate_dashed_word(atom, word_dict)
+    #     else:
+    #         words.append(atom)
     sq_list = []
     for id, word in enumerate(words):
         sq = word_2_parse_square(word)
@@ -104,4 +111,34 @@ def separate_dashed_word(word : str, word_dict = ud_word_dict) -> List[str]:
             atoms = atoms[1:]
     if atoms:
         final_list.append(atoms[0])
+    return final_list
+
+def text_to_atoms(text : str, word_dict : dict = ud_word_dict):
+    space_split = re.split('\s+', text)
+    punct = string.punctuation.replace('-', '').replace("'", '') # - and ' can be part of the word
+    punct_split = []
+    for atom in space_split:
+        if not atom: continue
+        l = re.split('([' + punct + ']+)', atom)
+        punct_split.extend([s for s in l if s])
+    # deal with punctuation, dashes, etc
+    final_list = []
+    for atom in punct_split:
+        if '-' in atom:
+            if atom in word_dict:
+                final_list.append(atom)
+            else:
+                final_list.extend(separate_dashed_word(atom, word_dict))
+        elif re.fullmatch('[' + string.punctuation + ']+', atom): # is all punctuation
+            if atom in word_dict:
+                final_list.append(atom)
+            else:
+                # either add as individual thingies if they're regular punctuation
+                # or return as such
+                if all([c in word_dict and 'PUNCT' in word_dict[c][0]['data'][TYPE_STR] for c in atom]):
+                    final_list.extend([c for c in atom]) # add each character individually
+                else:
+                    final_list.append(atom)
+        else:
+            final_list.append(atom)
     return final_list

@@ -6,7 +6,7 @@ from rvalues import RValues
 
 COMMENT_STR = '#'
 
-def load_grammar(lines):
+def load_rules(lines):
     if isinstance(lines, str):
         lines = lines.split('\n')
     line_count = 0
@@ -79,7 +79,7 @@ def load_grammar(lines):
                     dicts.update({c.key:c for c in constraints_to_add})
 
             rule_list.append(rule)
-    return Grammar(rule_list)
+    return rule_list #Grammar(rule_list)
 
 if __name__ == "__main__":
     grammar_text = """
@@ -91,4 +91,4 @@ if __name__ == "__main__":
         NP[caz=@1 gen=@2] ::= NP[caz=@2 gen=@1] AdjP
         %score 1.2
         """
-    grammar = load_grammar(grammar_text)
+    grammar = Grammar(load_rules(grammar_text))

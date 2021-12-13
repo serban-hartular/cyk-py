@@ -185,10 +185,12 @@ import { root_to_str_rep, score2string } from "./common_utils"
 			<li><a href="#top">Top of Page</a></li>
 			{#if tree_library}
 			<li><a href="#parse_table">Parse Table</a></li>
+			<li><a href="#grammar">Grammar Editor</a></li>
 			{:else}
 			<li><span style="color:grey">Parse Table</span></li>
+			<li><span style="color:grey">Grammar Editor</span></li>
 			{/if}
-			<li><a href="#grammar">Grammar Editor</a></li>
+			
 		</ul>
 	</div>
 	<div class="main">
@@ -271,7 +273,7 @@ import { root_to_str_rep, score2string } from "./common_utils"
 			bind:selected_node={selected_node} />
 	{/if}
 
-	{#if grammar && grammar != undefined}
+	{#if tree_library && grammar && grammar != undefined}
 	<a name="grammar" class="inactive_link">
 	<h3>Grammar Editor</h3></a>
 		<Grammar bind:grammar = {grammar} bind:grammar_change={grammar_change} />

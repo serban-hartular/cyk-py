@@ -1,0 +1,20 @@
+
+dev-18: una dupa alta -  a possible predsup - 
+dev-615: long
+dev-626: cotidian - TODO add as ADV
+dev-171: long
+dev-238: long, check sotia prietenului sau
+dev-335: why not?
+dev-348: abbreviations
+dev-358: excretă și plural TODO
+dev-554: problem with coordination!
+dev-628: direct din pamant - TODO Adv PP
+dev-742: este deci -- added deci to însă as possible adv
+dev-22: '4 aprilie 1984, Aseară la cinema, Numai filme de război.' - no verb
+dev-49: evident că -- predicat 
+dev-54: dicendi
+dev-64: long, with coordination
+dev-204: se socotea un bard -- predsec nominal, xcomp
+dev-210: așa cum VP is an AdvP TODO
+dev-215: supine as npred, Poss=Yes!! 
+dev-300: parataxis x 2: Domnul a dat, Domnul a luat, fie numele Domnului binecuvântat.
