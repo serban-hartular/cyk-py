@@ -42,7 +42,8 @@ infile.close()
 
 # changes to dict
 ud_word_dict['de'].remove(ud_word_dict['de'][1]) # remove 'foreign' de
-ud_word_dict['iar'].append({'count':500, 'data':{TYPE_STR:'CCONJ', FORM_STR:'iar', LEMMA_STR:'iar'}})
+ud_word_dict['iar'].append({'count':500, 
+                            'data':{TYPE_STR:{'CCONJ'}, FORM_STR:{'iar'}, LEMMA_STR:{'iar'}}})
 ud_word_dict['excretă'].append( # excreta prezent
     {'data': {'Mood': {'Ind'}, 'Person': {'3'}, 'Tense': {'Pres'}, 'VerbForm': {'Fin'}, 'type': {'VERB'}, 'form': {'excretă'}, 'lemma': {'excreta'}}, 'count': 5}
 )
