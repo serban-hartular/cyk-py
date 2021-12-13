@@ -49,6 +49,11 @@ ud_word_dict['excretă'].append( # excreta prezent
 ud_word_dict['cotidian'].append( # cotidian adverb
     {'data': {'type': {'ADV'}, 'form': {'cotidian'}, 'lemma': {'cotidian'}}, 'count': 1}
 )
+
+ud_word_dict['merg'].append(
+    {'data': {'Mood': {'Ind'}, 'Number': {'Sing'}, 'Person': {'1'}, 'Tense': {'Pres'}, 'VerbForm': {'Fin'}, 'type': {'VERB'}, 'form': {'merg'}, 'lemma': {'merge'}}, 'count': 8}
+)
+
 def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser.Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
     # if node_data.get(TYPE_STR)[0] in punctuation_dict: # replace punctuation
