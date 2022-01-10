@@ -1,20 +1,23 @@
 
 
-sub_function_words = ['AdvSpec']
+sub_function_words = ['AdvSpec', 'AdvClit']
 function_words = ['ADP', 'SCONJ', 'CCONJ', 'AUX', 'NUM', 'DET', 'PART']
 content_words = ['NOUN', 'VERB', 'ADJ', 'ADV', 'PRON']
 multiword_heads = ['Prep', 'SConj', 'BARE_PP', 'CA_SI']
 conjuncts = ['VPConj', 'NPConj', 'AdjPConj', 'AdvPConj', 'PPConj']
 
-from cyk_parser import *
-from rule_io import POSITION_STR, TYPE_STR, FORM_STR
+from cyk.parser import *
+from cyk.rule_io import POSITION_STR, TYPE_STR
+
 
 class UD_Node:
     deprel_dict = {'dobj':['obj', 'xcomp', 'ccomp'],
-                   'subj':['nsubj', 'csubj'],
+                   'subj':['nsubj', 'csubj', 'nsubj:pass'],
                    'iobj':['iobj'],
-                   'ntmod':['nmod:tmod'],
-                   'predsup':['xcomp']
+                   'ntmod':['nmod:tmod', 'obl'],
+                   'predsup':['xcomp'],
+                   'cpredobj':['xcomp'],
+                   'obj2':['ccomp:pmod']
                    }
     def __init__(self, data : NodeData):
         self.data = data
@@ -53,7 +56,7 @@ class UD_Node:
             if node.id != conll.id:
                 print('Error! Different node ids for {}, {}'.format(str(node), conll.id))
                 return (node, node.id, conll.id)
-            if node.head != conll.head:
+            if node.head != conll.head: # we may be doing partial trees, roots don't count
                 return (node, node.head, conll.head)
             if node.deprel in UD_Node.deprel_dict and conll.deprel not in UD_Node.deprel_dict[node.deprel]:
                 return (node, node.deprel, conll.deprel)

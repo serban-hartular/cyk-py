@@ -4,9 +4,10 @@ from collections import defaultdict
 
 import pyconll
 
-from rule import NodeData
-from rule_io import TYPE_STR, FORM_STR, LEMMA_STR, UNKOWN_STR, POSITION_STR
+from cyk.rule import NodeData
+from cyk.rule_io import TYPE_STR, FORM_STR, LEMMA_STR, UNKOWN_STR, POSITION_STR
 from typing import List
+from cyk.parser import Tree, ParseSquare
 
 import re
 
@@ -33,9 +34,8 @@ def generate_word_dict():
     return words
 
 import pickle
-import cyk_parser
 
-ud_word_dict_filename = 'ud-word-dict.p'
+ud_word_dict_filename = r'C:\Users\ffxvtj\Documents\Projects\CYK_PY\ud-word-dict.p'#'../ud-word-dict.p'
 infile = open(ud_word_dict_filename, 'rb')
 ud_word_dict = pickle.load(infile)
 infile.close()
@@ -50,12 +50,31 @@ ud_word_dict['excretă'].append( # excreta prezent
 ud_word_dict['cotidian'].append( # cotidian adverb
     {'data': {'type': {'ADV'}, 'form': {'cotidian'}, 'lemma': {'cotidian'}}, 'count': 1}
 )
+ud_word_dict['sa'][0]['count'] = 64 # PRON poss count, not abbreviation SA
 
 ud_word_dict['merg'].append(
     {'data': {'Mood': {'Ind'}, 'Number': {'Sing'}, 'Person': {'1'}, 'Tense': {'Pres'}, 'VerbForm': {'Fin'}, 'type': {'VERB'}, 'form': {'merg'}, 'lemma': {'merge'}}, 'count': 8}
 )
 
-def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser.Tree:
+ud_word_dict['a'][2]['data']['Mood'] = {'Ind'} # a auxiliary cannot be conditional
+ud_word_dict['ca'][0]['data']['Full'] = {'No'} # ca is not a full adv, can't form AdvP by itself
+ud_word_dict['mai'][0]['data']['Full'] = {'No'} # idem
+# treime ca substantiv
+ud_word_dict['treimi'][0]['data']['type'] = {'NOUN'}
+# a fi nu poate avea dirobj, etc
+for tags in ud_word_dict.values():
+    for fi in tags:
+        if fi['data']['lemma'] == {'fi'}:
+            fi['data']['dobj'] = {'T'}
+            # fi['data']['obj2'] = {'T'}
+            # fi['data']['predsup'] = {'T'}
+            fi['data']['cpredobj'] = {'T'}
+            if fi['data']['type'] == {'AUX'}: # no more aux fi!
+                fi['data']['type'] = {'VERB'}
+        if fi['data']['lemma'] == {'anumit'}:
+            fi['data']['type'] = {'ADJ'}
+
+def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> Tree:
     node_data = {k:list(v) for k,v in word_rec['data'].items()}
     # if node_data.get(TYPE_STR)[0] in punctuation_dict: # replace punctuation
     #     node_data[TYPE_STR] = [punctuation_dict[node_data[TYPE_STR][0]]]
@@ -63,11 +82,11 @@ def word_dict_2_tree(form : str, word_rec : dict, id : str = None) -> cyk_parser
     if id is not None:
         node_data[POSITION_STR] = id
     count = word_rec['count']
-    tree = cyk_parser.Tree(NodeData(node_data))
+    tree = Tree(NodeData(node_data))
     tree.score = count
     return tree
 
-def word_2_parse_square(word : str, id : str = None, word_dict = ud_word_dict) -> cyk_parser.ParseSquare:
+def word_2_parse_square(word : str, id : str = None, word_dict = ud_word_dict) -> ParseSquare:
     form = word
     word = word.lower()
     if not word in word_dict: return None
@@ -75,10 +94,10 @@ def word_2_parse_square(word : str, id : str = None, word_dict = ud_word_dict) -
     score_sum = sum([tree.score for tree in tree_list])
     for tree in tree_list:
         tree.score = tree.score / score_sum
-    return cyk_parser.ParseSquare(tree_list)
+    return ParseSquare(tree_list)
 
 def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict) \
-        -> (List[cyk_parser.ParseSquare], List[str]):
+        -> (List[ParseSquare], List[str]):
     # split = re.split(r'[ \t\.,;:\\?!@#$%^&“„]', text)
     # split = re.split('\W+|(,)', text) # to do
     # split = [s for s in split if s]
@@ -96,7 +115,7 @@ def text_2_square_list(text : str, remove_punct = True, word_dict = ud_word_dict
         sq = word_2_parse_square(word)
         if not sq:
             # raise Exception('Unkown word "%s"' % word)
-            sq = cyk_parser.ParseSquare([cyk_parser.Tree(NodeData({TYPE_STR: UNKOWN_STR, FORM_STR: word}))]) # unknown
+            sq = ParseSquare([Tree(NodeData({TYPE_STR: UNKOWN_STR, FORM_STR: word}))]) # unknown
             unknown_words.append(word)
         # add ID
         for tree in sq:

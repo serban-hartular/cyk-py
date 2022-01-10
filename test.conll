@@ -1,13 +1,10 @@
-# sent_id = dev-73
-# text = Gripa aviară a provocat primul deces în rândul populației thailandeze.
-1	Gripa	gripă	NOUN	Ncfsry	Case=Acc,Nom|Definite=Def|Gender=Fem|Number=Sing	4	nsubj	_	_
-2	aviară	aviară	ADJ	Afpfsrn	Case=Acc,Nom|Definite=Ind|Degree=Pos|Gender=Fem|Number=Sing	1	amod	_	_
-3	a	avea	AUX	Va--3s	Number=Sing|Person=3	4	aux	_	_
-4	provocat	provoca	VERB	Vmp--sm	Gender=Masc|Number=Sing|VerbForm=Part	0	root	_	_
-5	primul	prim	NUM	Momsrly	Case=Acc,Nom|Definite=Def|Gender=Masc|Number=Sing|NumForm=Word|NumType=Ord	6	nummod	_	_
-6	deces	deces	NOUN	Ncms-n	Definite=Ind|Gender=Masc|Number=Sing	4	obj	_	_
-7	în	în	ADP	Spsa	AdpType=Prep|Case=Acc	8	case	_	_
-8	rândul	rând	NOUN	Ncmsry	Case=Acc,Nom|Definite=Def|Gender=Masc|Number=Sing	4	advcl	_	_
-9	populației	populație	NOUN	Ncfsoy	Case=Dat,Gen|Definite=Def|Gender=Fem|Number=Sing	8	nmod	_	_
-10	thailandeze	thailandez	ADJ	Afpfson	Case=Dat,Gen|Definite=Ind|Degree=Pos|Gender=Fem|Number=Sing	9	amod	_	SpaceAfter=No
-11	.	.	PUNCT	PERIOD	_	4	punct	_	_
+# sent_id = dev-742
+# text = Suprafața corpului negru este deci o suprafață emițătoare 
+1	Suprafața	suprafață	NOUN	Ncfsry	Case=Acc,Nom|Definite=Def|Gender=Fem|Number=Sing	7	nsubj	_	_
+2	corpului	corp	NOUN	Ncmsoy	Case=Dat,Gen|Definite=Def|Gender=Masc|Number=Sing	1	nmod	_	_
+3	negru	negru	ADJ	Afpms-n	Definite=Ind|Degree=Pos|Gender=Masc|Number=Sing	2	amod	_	_
+4	este	fi	AUX	Vmip3s	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	7	cop	_	_
+5	deci	deci	CCONJ	Ccssp	Polarity=Pos	7	cc:preconj	_	_
+6	o	un	DET	Tifsr	Case=Acc,Nom|Gender=Fem|Number=Sing|PronType=Ind	7	det	_	_
+7	suprafață	suprafață	NOUN	Ncfsrn	Case=Acc,Nom|Definite=Ind|Gender=Fem|Number=Sing	0	root	_	_
+8	emițătoare	emițător	ADJ	Afpfsrn	Case=Acc,Nom|Definite=Ind|Degree=Pos|Gender=Fem|Number=Sing	7	amod	_	_

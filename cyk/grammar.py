@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import List, Dict, Iterable
 
-from rule import Rule
-from rule_io import TYPE_STR
+from cyk.rule import Rule
+from cyk.rule_io import TYPE_STR
 
 
 class Grammar:

@@ -1,8 +1,8 @@
 
-from rule_io import parse_rule
-from cyk_grammar import Grammar
-from rule import Constraint, VAR_PREFIX, Rule
-from rvalues import RValues
+from cyk.rule_io import parse_rule
+from cyk.grammar import Grammar
+from cyk.rule import Constraint, VAR_PREFIX, Rule
+from cyk.rvalues import RValues
 
 COMMENT_STR = '#'
 

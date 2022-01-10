@@ -1,10 +1,9 @@
-from collections import defaultdict
 from typing import List
 
 import pyconll
 from pyconll.unit.token import Token
-from rule import NodeData, TYPE_STR
-from rule_io import LEMMA_STR, FORM_STR
+from cyk.rule import NodeData, TYPE_STR
+from cyk.rule_io import LEMMA_STR
 
 filelist = ['../corpus_ud/ro_rrt-ud-dev.conllu'] #, '../corpus_ud/ro_rrt-ud-train.conllu', '../corpus_ud/ro_rrt-ud-test.conllu']
 

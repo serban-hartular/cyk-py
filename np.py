@@ -1,7 +1,6 @@
 from dictionary import text_2_square_list
-from cyk_parser import Parser
-from cyk_grammar import Grammar
-from cyk_grammar_loader import load_grammar
+from parser import Parser
+from cyk.grammar_loader import load_grammar
 
 grammar_rules = """
 %%group Case,Gender,Number CGN

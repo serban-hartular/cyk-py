@@ -2,9 +2,7 @@ from flask import Flask, send_from_directory
 from flask import request
 import json
 
-import cyk_grammar
-from rule import NodeData
-from rule_io import TYPE_STR
+import cyk.grammar
 
 app = Flask(__name__)
 
@@ -27,11 +25,9 @@ def static_dir_index():
 def static_dir(path):
     return send_from_directory("static", path)
 
-import cyk_parser
+
 import dictionary
-import cyk_grammar_loader
-import guess_tree
-import prob_parser
+from cyk import grammar_loader, grammar, rule_io, guess_tree
 
 # grammar_rules = '\n'.join(rom_cfg_nom.cfg_list + rom_cfg_verb.cfg_list)
 # grammar = cyk_grammar_loader.load_grammar(grammar_rules)
@@ -41,15 +37,17 @@ import prob_parser
 #     default_grammar = cyk_grammar_loader.load_grammar(fptr)
 
 grammar_lines = []
-# with open('./ro_locut.cfg', 'r', encoding='utf8') as fptr:
-#     grammar_lines += fptr.readlines()
+with open('./ro_locut.cfg', 'r', encoding='utf8') as fptr:
+    grammar_lines += fptr.readlines()
 with open('rom_cfg_0.3.cfg', 'r', encoding='utf8') as fptr:
     grammar_lines += fptr.readlines()
-default_grammar = cyk_grammar.Grammar(cyk_grammar_loader.load_rules(grammar_lines))
+default_grammar = cyk.grammar.Grammar(cyk.grammar_loader.load_rules(grammar_lines))
 
 
 client_count = 0
 client_data = dict()
+
+from cyk.piecewise_parser import PiecewiseParser
 
 @app.route("/get-client-id", methods=['POST'])
 def get_client_id():
@@ -57,8 +55,8 @@ def get_client_id():
     grammar = default_grammar
     client_count += 1
     client_id = client_count
-    client_data[client_id] = {'grammar':grammar,
-                              'parser':prob_parser.ProbabilisticParser(grammar),
+    client_data[client_id] = {'grammar':grammar, 
+                              'parser': cyk.prob_parser.ProbabilisticParser(grammar),
                               'guesser':None,
                               'unknown_words':list()}
 
@@ -82,6 +80,9 @@ def parse_text():
     if not client_id:
         return_obj['error_msg'] = 'No client_id'
         return return_obj
+    if not client_id in client_data:
+        return_obj['error_msg'] = 'Client_id expired. Please reload page'
+        return return_obj
     new_grammar = json_obj.get('grammar')
     if new_grammar is None: # if no rule list transmitted, use existing
         grammar = client_data[client_id]['grammar']
@@ -91,12 +92,12 @@ def parse_text():
         else:
             rule_text = '\n'.join(new_grammar)
             try:
-                grammar = cyk_grammar_loader.load_grammar(rule_text)
+                grammar = cyk.grammar.Grammar(cyk.grammar_loader.load_grammar(rule_text))
             except Exception as e:
                 return_obj['error_msg'] = 'Grammar rule error: ' + str(e)
                 return return_obj
         client_data[client_id]['grammar'] = grammar
-        client_data[client_id]['parser'] = prob_parser.ProbabilisticParser(grammar)
+        client_data[client_id]['parser'] = cyk.prob_parser.ProbabilisticParser(grammar)
         
     # get words
     sq_list, unknown = dictionary.text_2_square_list(text)
@@ -142,7 +143,7 @@ def next_parse():
     return json.dumps(return_obj)
 
 import lark
-import rule_io
+
 
 @app.route("/guess-parse", methods=['POST'])
 def guess_parse():

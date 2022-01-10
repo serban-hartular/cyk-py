@@ -8,7 +8,7 @@ DEPREL_STR = 'deprel'
 HEAD_STR = 'h'
 
 # RValues = List[str]
-from rvalues import RValues
+from cyk.rvalues import RValues
 
 class NodeData(Dict[str, RValues]):
     def __init__(self, d : dict = None):

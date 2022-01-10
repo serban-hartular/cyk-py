@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import Dict, List
 
-from cyk_parser import Tree
-from rule import Rule
-from rule_io import LEMMA_STR
+from cyk.parser import Tree
+from cyk.rule import Rule
+from cyk.rule_io import LEMMA_STR
 
 
 class RuleCounter:

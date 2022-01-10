@@ -1,7 +1,5 @@
-from collections import namedtuple
-
-import prob_parser
-from cyk_parser import *
+from cyk.parser import *
+from cyk.prob_parser import *
 
 def _empty(parser : Parser, pos : tuple) -> bool:
     return not bool([t for t in parser.cell(pos) if not t.guess and parser.grammar.is_known(t.type)])
@@ -124,8 +122,8 @@ class GuessTree(Tree):
         return text
 
 
-class GuessTable(prob_parser.ProbabilisticParser):
-    def __init__(self, parser : prob_parser.ProbabilisticParser, root_data : NodeData):
+class GuessTable(ProbabilisticParser):
+    def __init__(self, parser : ProbabilisticParser, root_data : NodeData):
         """
         Copies the contents of the parser's table
         """

@@ -1,8 +1,8 @@
 import math
 
-from cyk_grammar import Grammar
-from rule import Rule, NodeData, DEPREL_STR, HEAD_STR
-from rule_io import TYPE_STR, FORM_STR, LEMMA_STR
+from cyk.grammar import Grammar
+from cyk.rule import Rule, NodeData, DEPREL_STR, HEAD_STR
+from cyk.rule_io import TYPE_STR, FORM_STR, LEMMA_STR
 from typing import List, Dict
 
 
@@ -133,28 +133,37 @@ class ParseSquare(List[Tree]):
             trees = [t for t in trees if not self.contains_similar(t)]
         self.extend(trees)
         return len(trees)
-        
+    @staticmethod
+    def new(tree_list : List[Tree] = list()):
+        return ParseSquare(tree_list)
+    
 class Parser:
     def __init__(self, grammar : Grammar):
         self.grammar = grammar
         self.table = list()
+        self.exclude_similar = True
     def parse(self, input : List[ParseSquare], exclude_similar = True):
         N = len(input)
         self.generate_table(N)
         for sq in input: # verify input -- no cell empty
             if not sq: raise Exception('Empty input cell')
         self.table[0] = [sq for sq in input] # initialize bottom row
+        self.exclude_similar = exclude_similar
         for row_index in range(0, len(self.table)):
             for col_index in range(0, len(self.table[row_index])):
-                square = self.table[row_index][col_index]
-                self.do_doubleton_rules(row_index, col_index, exclude_similar)
-                self.do_singleton_rules(square, exclude_similar)
-                square.sort(key=lambda t: -t.nscore)
+                self.do_square(row_index, col_index)
+                self.table[row_index][col_index].sort(key=lambda t: -t.nscore)
         return self.table
-    def generate_table(self, N : int):
+    def do_square(self, row: int, col: int) -> int:
+        square = self.table[row][col]
+        n = len(square)
+        self.do_doubleton_rules(row, col, self.exclude_similar)
+        self.do_singleton_rules(square, self.exclude_similar)
+        return len(square) - n
+    def generate_table(self, N : int, new_sq_fn = ParseSquare.new):
         self.table = list() # array that holds the rows        
         for row_index in range(0, N): # create row
-            row = [ParseSquare() for col in range(row_index, N)]
+            row = [new_sq_fn() for col in range(row_index, N)]
             self.table.append(row)
     def do_singleton_rules(self, square : ParseSquare, exclude_similar : bool):
         i = 0 # index of node in square

@@ -3,8 +3,8 @@
 from lark import Lark, Tree, Token
 from typing import List
 
-import rule
-from rvalues import RValues
+from cyk.rule import Rule, RuleItem, Constraint
+from cyk.rvalues import RValues
 
 TYPE_STR = 'type'
 FORM_STR = 'form'
@@ -42,7 +42,7 @@ constraint  : VALUE EQUALS values
 values :   VALUE
        |   values "," VALUE
 
-VALUE : /[_@a-zA-Z0-9ăîâșțȘȚĂÎÂ]+/
+VALUE : /[_@a-zA-Z0-9ăîâșțȘȚĂÎÂ\-]+/
 EQUALS : "="
 STRICT_EQ : "=="
 INEQ : "!="
@@ -59,7 +59,7 @@ def get_list(tree : Tree):
             l += get_list(child)
     return l
 
-def get_constraint(tree : Tree) -> rule.Constraint:
+def get_constraint(tree : Tree) -> Constraint:
     assert tree.data == 'constraint'
     key = tree.children[0].value
     # isStrict = (tree.children[1].value == '==')
@@ -74,7 +74,7 @@ def get_constraint(tree : Tree) -> rule.Constraint:
         values[0] = values[0].strip('@')
         if len(values[0]) == 0:
             values[0] = key
-    return rule.Constraint(key, RValues(values, isVariable), isStrict, isNegated)
+    return Constraint(key, RValues(values, isVariable), isStrict, isNegated)
 
 # def get_constraint_dict(tree : Tree):
 def get_constraint_list(tree : Tree):
@@ -91,16 +91,16 @@ def get_constraint_list(tree : Tree):
             l += get_constraint_list(child)
     return l #d
 
-def get_rule_item(tree : Tree) -> rule.RuleItem:
+def get_rule_item(tree : Tree) -> RuleItem:
     assert tree.data == 'item'
     # d = {TYPE_STR : rule.Constraint(TYPE_STR, RValues([tree.children[0].value]), True)}
-    constraints = [rule.Constraint(TYPE_STR, RValues([tree.children[0].value]), True)]
+    constraints = [Constraint(TYPE_STR, RValues([tree.children[0].value]), True)]
     if(len(tree.children) > 1):
         # d.update(get_constraint_dict(tree.children[1]))
         constraints += get_constraint_list(tree.children[1])
-    return rule.RuleItem(constraints) #([c for c in d.values()])
+    return RuleItem(constraints) #([c for c in d.values()])
 
-def get_dependent_item(tree: Tree) -> rule.RuleItem:
+def get_dependent_item(tree: Tree) -> RuleItem:
     assert tree.data == "dependent"
     if isinstance(tree.children[0], Token):
         deprel = tree.children[0].value
@@ -123,17 +123,17 @@ def get_dependent_list(tree : Tree) -> list:
             l += get_dependent_list(child)
     return l
 
-def get_rule(tree : Tree) -> rule.Rule:
+def get_rule(tree : Tree) -> Rule:
     assert tree.data == 'rule'
-    return rule.Rule(get_rule_item(tree.children[0]), get_dependent_list(tree.children[1]))
+    return Rule(get_rule_item(tree.children[0]), get_dependent_list(tree.children[1]))
 
 _parser = Lark(grammar, start='rule')
 
-def parse_rule(text : str) -> rule.Rule:
+def parse_rule(text : str) -> Rule:
     tree = _parser.parse(text)
     return get_rule(tree)
 
-def rule_list_from_string(text : str) -> List[rule.Rule]:
+def rule_list_from_string(text : str) -> List[Rule]:
     lines = text.split('\n')
     rules = []
     for line in lines:
